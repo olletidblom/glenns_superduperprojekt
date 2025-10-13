@@ -1,5 +1,3 @@
-USE_GNU = 1
-
 # C-kompilator (byt vid behov, t.ex. clang)
 # Detta är en enkel variabel definition
 CC := gcc
@@ -14,10 +12,7 @@ BUILD_DIR := build
 
 # Flaggor: standard, varningar, optimering + auto-dep för headers 
 # Detta är en enkel variabel definition
-CFLAGS := -g -O0 -std=c99 -Wall -Wextra -MMD -MP -Werror -Wfatal-errors -Wno-format-truncation -Iincludes -Ilibs
-ifeq ($(USE_GNU), 1)
-	CFLAGS += -D_GNU_SOURCE
-endif
+CFLAGS := -std=c99 -Wall -Wextra -MMD -MP -Werror -Wfatal-errors -Wno-format-truncation -Iincludes -Ilibs
 
 # Länkarflaggor
 # Detta är en enkel variabel definition
@@ -97,5 +92,26 @@ print:
 # Inkludera header-beroenden (prefix '-' = ignorera om de inte finns ännu)
 -include $(DEP)
 
+# Debug target for Valgrind
+debug: CFLAGS += -g -O0 -DDEBUG
+debug: CFLAGS := $(filter-out -Werror,$(CFLAGS)) -g -O0 -DDEBUG
+debug: LDFLAGS := $(filter-out -flto,$(LDFLAGS))
+debug: clean $(BIN)_debug
+
+$(BIN)_debug: $(OBJ)
+	@echo "Linking debug binary..."
+	@$(CC) $(LDFLAGS) $(OBJ) -o $@ $(LIBS)
+
+# Valgrind targets
+valgrind: $(BIN)_debug
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(BIN)_debug
+
+valgrind-log: $(BIN)_debug
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind.log ./$(BIN)_debug
+
+# Rebuild objects for debug (force recompilation with debug flags)
+debug-clean:
+	@rm -rf $(BUILD_DIR) $(BIN)_debug
+
 # Dessa mål är inte riktiga filer; kör alltid när de anropas
-.PHONY: all run clean
+.PHONY: all run clean debug valgrind valgrind-log
