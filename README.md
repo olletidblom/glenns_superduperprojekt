@@ -1,7 +1,7 @@
 # WeatherTech Client-Server Project
 
 **Project:** Utveckling av klient–server lösning för väderdata  
-**Client:** Glenns Änglar Solutions (GÄS)  
+**Client:** WeatherTech Solutions AB  
 **Project Start:** Vecka 43  
 **Final Delivery:** 2025-12-29 och 2025-12-30  
 **Methodology:** Scrum (customer is Product Owner)
