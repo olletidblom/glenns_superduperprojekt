@@ -1,4 +1,5 @@
 // server.c - un micro-serveur qui accepte une connexion client, attend un message, et y répond
+// server.c - micro-server allowing client connection, expect a message and answers it
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -7,8 +8,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define PORT 4242  // le port de notre serveur
-#define BACKLOG 10 // nombre max de demandes de connexion
+#define PORT 4242  // Server port
+#define BACKLOG 10 // maximum connection at a time
 
 int main(void)
 {
@@ -22,13 +23,15 @@ int main(void)
     char buffer[BUFSIZ];
     int bytes_read;
 
-    // on prépare l'adresse et le port pour la socket de notre serveur
+    // on prépare l'adresse et le port pour la socket de notre 
+    //Prepare socket adress and port 
     memset(&sa, 0, sizeof sa);
     sa.sin_family = AF_INET; // IPv4
     sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // 127.0.0.1, localhost
     sa.sin_port = htons(PORT);
 
     // on crée la socket, on a lit et on écoute dessus
+    //Create socket, read and listen
     socket_fd = socket(sa.sin_family, SOCK_STREAM, 0);
     if (socket_fd == -1) {
         fprintf(stderr, "socket fd error: %s\n", strerror(errno));
@@ -51,6 +54,7 @@ int main(void)
     }
 
     // on accepte une connexion entrante
+    // Allow connection
     addr_size = sizeof client_addr;
     client_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &addr_size);
     if (client_fd == -1) {
@@ -60,6 +64,7 @@ int main(void)
     printf("Accepted new connection on client socket fd: %d\n", client_fd);
 
     // on recoit un message via la socket client
+    // Receive message via client
     bytes_read = 1;
     while (bytes_read >= 0) {
         printf("Reading client socket %d\n", client_fd);
@@ -75,6 +80,7 @@ int main(void)
         else {
             // Si on a bien reçu un message, on va l'imprimer
             // puis renvoyer un message au client
+            // If message recieved, print it and send a message to client
             char *msg = "Got your message.";
             int msg_len = strlen(msg);
             int bytes_sent;
