@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() {
+int main123() {
 
   printf("Fuck you MotherFucker!\n");
 

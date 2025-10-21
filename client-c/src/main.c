@@ -5,13 +5,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define PORT 4242
+#define PORT 8080
 
 int main()
 {
     int sock;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
+    char http_buffer[4096] = {0};
     // 1. Skapa socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
@@ -37,6 +38,8 @@ int main()
     char *hello = "Hello from client!";
     send(sock, hello, strlen(hello), 0);
     // 5. Läs svar
+    read(sock, http_buffer, 4096);
+    printf("HTTP Response:\n%s\n", http_buffer);
     read(sock, buffer, 1024);
     printf("Server: %s\n", buffer);
     close(sock);
