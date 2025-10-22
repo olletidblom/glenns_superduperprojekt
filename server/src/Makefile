@@ -1,55 +1,59 @@
-# Server Makefile
-
+# Compiler settings
 CC := gcc
 CFLAGS := -std=c99 -Wall -Wextra -MMD -MP -g
-INCLUDES := -I../libs
+INCLUDES := -I../../libs
 LDFLAGS := -lcurl
+
+# Directory structure
 BUILD_DIR := build
-TARGET := server
+TARGET := $(BUILD_DIR)/server
 
-# Source files (server.c is the only source file)
-SRC := server.c
-OBJ := $(BUILD_DIR)/server.o
+# Source files
+SRC := $(wildcard *.c ../../libs/*.c)
 
-# Dependencies
+# Object and dependency files (in build/)
+OBJ := $(patsubst %.c,$(BUILD_DIR)/%.o,$(notdir $(SRC)))
 DEPS := $(OBJ:.o=.d)
 
-# Ensure the build directory exists before proceeding
+# Ensure the build directory exists
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-# Default target to build the executable
+# Default target
 all: $(TARGET)
 
-# Build the target (executable)
+# Link executable
 $(TARGET): $(OBJ)
-	@echo "Linking $(TARGET)..."
+	@echo "Linking $@..."
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 	@echo "Build complete!"
 
-# Rule to compile .c files to .o files
+# Compile server source files
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@echo "Compiling $<..."
-	@echo "Source: $<"
-	@echo "Output: $@"
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-# Run the application
+# Compile library source files
+$(BUILD_DIR)/%.o: ../../libs/%.c | $(BUILD_DIR)
+	@echo "Compiling library $<..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# Run the program
 run: $(TARGET)
-	@echo "Running $(TARGET)..."
+	@echo "Running server..."
 	./$(TARGET)
 
-# Cleanup
+# Clean build artifacts
 clean:
 	@echo "Cleaning build files..."
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR)
 	@echo "Clean complete!"
 
-# Debug build with extra debugging symbols
+# Debug build
 debug: CFLAGS += -DDEBUG -O0 -ggdb3
 debug: $(TARGET)
 
-# Release build with optimization
+# Release build
 release: CFLAGS += -O2 -DNDEBUG
 release: $(TARGET)
 
