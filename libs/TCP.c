@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string.h>
 
 
 
@@ -18,23 +19,23 @@ int tcp_connect(const char* hostname, int port)
     
     hostent = gethostbyname(hostname);
     if(hostent == NULL){
-        fprintf(stderr, "gethostname error: %s\n", strerror(errno));
+        printf("gethostname error: %s\n", strerror(errno));
         return (1);
     }
 
     memset(&remote_sa, 0, sizeof remote_sa);
     remote_sa.sin_family = AF_INET; 
-    remote_sa.sin_port = htons(80);
+    remote_sa.sin_port = htons(port);
     memcpy(&remote_sa.sin_addr, hostent->h_addr_list[0], hostent->h_length);
 
     remote_socket = socket(remote_sa.sin_family, SOCK_STREAM, 0);
     if (remote_socket == -1) {
-        fprintf(stderr, "socket fd error: %s\n", strerror(errno));
+        printf("socket fd error: %s\n", strerror(errno));
         return (2);
     }
 
     if(connect(remote_socket, (struct sockaddr*)&remote_sa, sizeof remote_sa) == -1){
-        fprintf(stderr, "connect error: %s\n", strerror(errno));
+        printf("connect error: %s\n", strerror(errno));
         return (3);
     }
 
@@ -73,14 +74,14 @@ int tcp_listen(int port, int backlog)
 
         server_socket = socket(sa.sin_family, SOCK_STREAM, 0);
     if (server_socket == -1) {
-        fprintf(stderr, "socket fd error: %s\n", strerror(errno));
+        printf("socket fd error: %s\n", strerror(errno));
         return (1);
     }
     printf("Created server socket fd: %d\n", server_socket);
 
     status = bind(server_socket, (struct sockaddr *)&sa, sizeof sa);
     if (status != 0) {
-        fprintf(stderr, "bind error: %s\n", strerror(errno));
+        printf("bind error: %s\n", strerror(errno));
         return (2);
     }
     printf("Bound socket to localhost port %d\n", port);
@@ -88,7 +89,7 @@ int tcp_listen(int port, int backlog)
     printf("Listening on port %d\n", port);
     status = listen(server_socket, backlog);
     if (status != 0) {
-        fprintf(stderr, "listen error: %s\n", strerror(errno));
+        printf("listen error: %s\n", strerror(errno));
         return (3);
     }
 
@@ -105,7 +106,7 @@ int tcp_accept(int socket)
     addr_size = sizeof client_addr;
     client_socket = accept(socket, (struct sockaddr *)&client_addr, &addr_size);
     if (client_socket == -1) {
-        fprintf(stderr, "client fd error: %s\n", strerror(errno));
+        printf("client fd error: %s\n", strerror(errno));
         return (4);
     }
     printf("Accepted new connection on client socket fd: %d\n", client_socket);
