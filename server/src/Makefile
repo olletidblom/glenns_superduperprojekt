@@ -1,105 +1,50 @@
-# Compiler and flags
-CC := gcc
-CFLAGS := -std=c99 -Wall -Wextra -MMD -MP -g
-INCLUDES := -Isrc/libs -Isrc/jansson/src
-LDFLAGS := -lcurl
-TARGET := weather_app
+# Compiler settings
+CC      = gcc
+CFLAGS  = -Wall -Wextra -std=c11 -I../libs
+LDFLAGS = 
 
 # Directories
-SRC_DIR := src
-LIBS_DIR := $(SRC_DIR)/libs
-JANSSON_DIR := $(SRC_DIR)/jansson/src
-BUILD_DIR := build
+SRC_DIR   = .
+LIB_DIR   = ../../libs
+BUILD_DIR = ../build
 
-# Jansson source files
-JANSSON_SOURCES := $(wildcard $(JANSSON_DIR)/*.c)
-JANSSON_OBJECTS := $(JANSSON_SOURCES:$(JANSSON_DIR)/%.c=$(BUILD_DIR)/jansson/%.o)
+# Source files
+SRC_FILE = server.c
+LIB_FILES = $(LIB_DIR)/TCP.c $(LIB_DIR)/HTTP.c
 
-# App source files
-LIBS_SOURCES := $(wildcard $(LIBS_DIR)/*.c)
-LIBS_OBJECTS := $(LIBS_SOURCES:$(LIBS_DIR)/%.c=$(BUILD_DIR)/libs/%.o)
+# Object files
+OBJ_FILES = $(BUILD_DIR)/server.o $(BUILD_DIR)/TCP.o $(BUILD_DIR)/HTTP.o
 
-# Main source
-MAIN_OBJECT := $(BUILD_DIR)/src/main.o
-
-# All objects
-ALL_OBJECTS := $(JANSSON_OBJECTS) $(LIBS_OBJECTS) $(MAIN_OBJECT)
-
-# Dependency files
-DEPS := $(ALL_OBJECTS:.o=.d)
+# Output binary
+TARGET = $(BUILD_DIR)/server_program
 
 # Default target
-all: $(TARGET)
+all: $(BUILD_DIR) $(TARGET)
 
-# Create the executable
-$(TARGET): $(ALL_OBJECTS)
-	@echo "Linking $(TARGET)..."
-	$(CC) $(ALL_OBJECTS) -o $@ $(LDFLAGS)
-	@echo "Build complete!"
+# Link all object files
+$(TARGET): $(OBJ_FILES)
+	$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS)
+	@echo "✅ Build complete: $(TARGET)"
 
-# Compile Jansson objects
-$(BUILD_DIR)/jansson/%.o: $(JANSSON_DIR)/%.c
-	@mkdir -p $(dir $@)
-	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+# Compile rules
+$(BUILD_DIR)/server.o: $(SRC_DIR)/server.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile library objects
-$(BUILD_DIR)/libs/%.o: $(LIBS_DIR)/%.c
-	@mkdir -p $(dir $@)
-	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+$(BUILD_DIR)/TCP.o: $(LIB_DIR)/TCP.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile main object
-$(BUILD_DIR)/src/main.o: $(SRC_DIR)/main.c
-	@mkdir -p $(dir $@)
-	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+$(BUILD_DIR)/HTTP.o: $(LIB_DIR)/HTTP.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Run the application
-run: $(TARGET)
-	./$(TARGET)
+# Create build directory if it doesn't exist
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# Clean build files
+# Cleanup
 clean:
-	@echo "Cleaning build files..."
-	rm -rf $(BUILD_DIR) $(TARGET)
-	@echo "Clean complete!"
+	rm -rf $(BUILD_DIR)/*
+	@echo "🧹 Cleaned up build files."
 
-# Debug build with extra debugging symbols
-debug: CFLAGS += -DDEBUG -O0 -ggdb3
-debug: $(TARGET)
-
-# Release build with optimization
-release: CFLAGS += -O2 -DNDEBUG
-release: $(TARGET)
-
-# Install dependencies (Ubuntu/Debian)
-install-deps:
-	@echo "Installing dependencies..."
-	sudo apt-get update
-	sudo apt-get install -y libcurl4-openssl-dev build-essential
-
-# Print variables for debugging
-print-%:
-	@echo $* = $($*)
-
-# Create directory structure
-init:
-	@mkdir -p $(BUILD_DIR)/{jansson,libs,src}
-
-# Help target
-help:
-	@echo "Available targets:"
-	@echo "  all       - Build the application (default)"
-	@echo "  run       - Build and run the application"
-	@echo "  clean     - Remove build files"
-	@echo "  debug     - Build with debug symbols"
-	@echo "  release   - Build optimized version"
-	@echo "  install-deps - Install required dependencies"
-	@echo "  help      - Show this help"
-
-# Include dependency files
--include $(DEPS)
-
-# Phony targets
-.PHONY: all clean run debug release install-deps help init print-%
+# Optional: run the program
+run: all
+	./$(TARGET)
