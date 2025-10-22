@@ -39,7 +39,7 @@ run: $(TARGET)
 	@echo "Running $(TARGET)..."
 	./$(TARGET)
 
-# Clean build files
+# Cleanup
 clean:
 	@echo "Cleaning build files..."
 	rm -rf $(BUILD_DIR) $(TARGET)
