@@ -1,50 +1,59 @@
-# Compiler settings
-CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -I../libs
-LDFLAGS = 
+# Server Makefile
 
-# Directories
-SRC_DIR   = .
-LIB_DIR   = ../../libs
-BUILD_DIR = ../build
+CC := gcc
+CFLAGS := -std=c99 -Wall -Wextra -MMD -MP -g
+INCLUDES := -I../libs
+LDFLAGS := -lcurl
+BUILD_DIR := build
+TARGET := server
 
-# Source files
-SRC_FILE = server.c
-LIB_FILES = $(LIB_DIR)/TCP.c $(LIB_DIR)/HTTP.c
+# Source files (server.c is the only source file)
+SRC := server.c
+OBJ := $(BUILD_DIR)/server.o
 
-# Object files
-OBJ_FILES = $(BUILD_DIR)/server.o $(BUILD_DIR)/TCP.o $(BUILD_DIR)/HTTP.o
+# Dependencies
+DEPS := $(OBJ:.o=.d)
 
-# Output binary
-TARGET = $(BUILD_DIR)/server_program
-
-# Default target
-all: $(BUILD_DIR) $(TARGET)
-
-# Link all object files
-$(TARGET): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS)
-	@echo "✅ Build complete: $(TARGET)"
-
-# Compile rules
-$(BUILD_DIR)/server.o: $(SRC_DIR)/server.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/TCP.o: $(LIB_DIR)/TCP.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/HTTP.o: $(LIB_DIR)/HTTP.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Create build directory if it doesn't exist
+# Ensure the build directory exists before proceeding
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)
+
+# Default target to build the executable
+all: $(TARGET)
+
+# Build the target (executable)
+$(TARGET): $(OBJ)
+	@echo "Linking $(TARGET)..."
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+	@echo "Build complete!"
+
+# Rule to compile .c files to .o files
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+	@echo "Compiling $<..."
+	@echo "Source: $<"
+	@echo "Output: $@"
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# Run the application
+run: $(TARGET)
+	@echo "Running $(TARGET)..."
+	./$(TARGET)
 
 # Cleanup
 clean:
-	rm -rf $(BUILD_DIR)/*
-	@echo "🧹 Cleaned up build files."
+	@echo "Cleaning build files..."
+	rm -rf $(BUILD_DIR) $(TARGET)
+	@echo "Clean complete!"
 
-# Optional: run the program
-run: all
-	./$(TARGET)
+# Debug build with extra debugging symbols
+debug: CFLAGS += -DDEBUG -O0 -ggdb3
+debug: $(TARGET)
+
+# Release build with optimization
+release: CFLAGS += -O2 -DNDEBUG
+release: $(TARGET)
+
+# Include dependency files
+-include $(DEPS)
+
+.PHONY: all clean run debug release
