@@ -1,3 +1,4 @@
+#include "../../libs/HTTP.h"
 #include "../../libs/TCPClient.h"
 #include <netdb.h>
 #include <stdio.h>
@@ -10,20 +11,15 @@
 
 int main()
 {
-    TCPClient client;
-    const char* msg = "Hello Client!\n";
-    tcp_init(&client, "localhost", 8080);
+    smw_init();
+    HTTP_run(http_GET, HTTP_work);
 
-    if((tcp_connect(&client)) < 0)
+    while(smw_getTaskCount() > 0)
     {
-        return -1;
+        smw_work(SystemMonotonicMS());
     }
 
-    tcp_sendAll(&client, msg, strlen(msg) + 1, 5000);
+    smw_dispose();
 
-    tcp_recieveAll(&client, strlen(msg) + 1, 5000);
-    
-
-    tcp_dispose(&client);
     return 0;
 }

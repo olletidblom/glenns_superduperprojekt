@@ -56,7 +56,7 @@ void server(void* _Context)
     
 }
 
-int server_run(void (*_Callback)())
+server_s* server_run(void (*_Callback)())
 {
     server_s* srv = NULL;
 
@@ -66,7 +66,7 @@ int server_run(void (*_Callback)())
     srv->callback = _Callback;
 
     
-    return 0;
+    return srv;
 
 }
 
