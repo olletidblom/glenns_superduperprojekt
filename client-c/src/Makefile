@@ -10,10 +10,10 @@ BUILD_DIR = build
 
 # Source files
 SRC_FILE = main.c
-LIB_FILES = $(LIB_DIR)/TCP.c $(LIB_DIR)/HTTP.c
+LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/HTTP.c
 
 # Object files
-OBJ_FILES = $(BUILD_DIR)/main.o $(BUILD_DIR)/TCP.o $(BUILD_DIR)/HTTP.o $(BUILD_DIR)/smw.o
+OBJ_FILES = $(BUILD_DIR)/main.o $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/HTTP.o $(BUILD_DIR)/smw.o
 
 # Output binary
 TARGET = $(BUILD_DIR)/client
@@ -31,7 +31,7 @@ $(TARGET): $(OBJ_FILES)
 $(BUILD_DIR)/main.o: $(SRC_DIR)/main.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/TCP.o: $(LIB_DIR)/TCP.c | $(BUILD_DIR)
+$(BUILD_DIR)/TCPClient.o: $(LIB_DIR)/TCPClient.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/HTTP.o: $(LIB_DIR)/HTTP.c | $(BUILD_DIR)
