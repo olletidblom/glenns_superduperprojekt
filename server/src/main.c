@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "server.h"
-#include "../../libs/utils.h"
+
+
 
 int main() {
   smw_init();
 
-  server_run(server);
+  server_s* srv = server_run(server);
+  server_listen_accept();
+
   uint64_t monTime = 0;
   while(smw_getTaskCount() > 0)
   {
@@ -15,6 +18,7 @@ int main() {
   }
   
   smw_dispose();
+  server_dispose(&srv);
 
   return 0;
 }

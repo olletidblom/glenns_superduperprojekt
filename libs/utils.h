@@ -1,6 +1,9 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <time.h>
 #include <stdint.h>
-#include <linux/time.h>
+
 
 uint64_t SystemMonotonicMS()
 {
@@ -18,3 +21,6 @@ uint64_t SystemMonotonicMS()
 
 	return result;
 }
+
+
+#endif

@@ -1,3 +1,4 @@
+#include "../../libs/TCPClient.h"
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,39 +10,20 @@
 
 int main()
 {
-    int sock;
-    struct sockaddr_in serv_addr;
-    char buffer[1024] = {0};
-    char http_buffer[4096] = {0};
- 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0)
-    {
-        perror("Socket creation error");
-        return -1;
-    }
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    TCPClient client;
+    const char* msg = "Hello Client!\n";
+    tcp_init(&client, "localhost", 8080);
 
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
+    if((tcp_connect(&client)) < 0)
     {
-        perror("Invalid address/Address not supported");
-        return -1;
-    }
-  
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        perror("Connection Failed");
         return -1;
     }
 
-    char *hello = "Hello from client!";
-    send(sock, hello, strlen(hello), 0);
+    tcp_sendAll(&client, msg, strlen(msg) + 1, 5000);
 
-    read(sock, http_buffer, 4096);
-    printf("HTTP Response:\n%s\n", http_buffer);
-    read(sock, buffer, 1024);
-    printf("Server: %s\n", buffer);
-    close(sock);
+    tcp_recieveAll(&client, strlen(msg) + 1, 5000);
+    
+
+    tcp_dispose(&client);
     return 0;
 }

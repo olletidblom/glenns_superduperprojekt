@@ -1,5 +1,5 @@
 #include "HTTP.h"
-#include "TCP.h"
+#include "TCPClient.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +14,7 @@
 
 int HTTP_Get(const char* hostname, const char* path, char* buffer, size_t buffer_size)
 {
-    int http_socket = tcp_connect(hostname, 80);
+    int http_socket = tcp_connect(NULL);
 
     char request[1024];
     snprintf(request, sizeof(request), "GET %s HTTP/1.0\r\n" "Host: %s\r\n" "Connection: close\r\n" "\r\n",
