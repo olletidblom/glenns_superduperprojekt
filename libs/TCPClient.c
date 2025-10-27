@@ -86,7 +86,7 @@ int tcp_sendAll(TCPClient* client, const void* data, size_t len, uint64_t timeou
     uint64_t timer = SystemMonotonicMS();
 
 
-    while(bytesToWrite > 0 && (SystemMonotonicMS() - timer) < timeout)
+    while(bytesToWrite > 0)
     {
         int bytesWritten = tcp_send(client, ptr, bytesToWrite);
 
@@ -101,15 +101,17 @@ int tcp_sendAll(TCPClient* client, const void* data, size_t len, uint64_t timeou
             continue;
         }
 
+        uint64_t timeDif = (SystemMonotonicMS() - timer);
+
+        if(timeDif>= timeout)
+        {
+            printf("TIMED OUT\n");
+            return -2;
+        }
+
         ptr += bytesWritten;
         bytesToWrite -= bytesWritten;
 
-    }
-
-    if(bytesToWrite > 0)
-    {
-        printf("Timed out\n");
-        return -2;
     }
 
     return 0;
@@ -122,7 +124,7 @@ ssize_t tcp_recieve(TCPClient* client, void* buffer, size_t len)
     return recv(client->client_socket, buffer, len, 0);
 }
 
-int tcp_recieveAll(TCPClient* client, char* msg, uint64_t timeout)
+int tcp_recieveAll(TCPClient* client, char** msg, uint64_t timeout)
 {
     printf("READIN\n");
     uint8_t* ptr = (uint8_t*)malloc(INIT_BUFFER_SIZE);
@@ -130,7 +132,7 @@ int tcp_recieveAll(TCPClient* client, char* msg, uint64_t timeout)
     uint64_t timer = SystemMonotonicMS();
     uint8_t* temp = ptr;
 
-    while(bytesToRead > 0 && (SystemMonotonicMS() - timer) < timeout)
+    while(bytesToRead > 0)
     {
         int bytesRead = tcp_recieve(client, temp, bytesToRead);
 
@@ -146,19 +148,20 @@ int tcp_recieveAll(TCPClient* client, char* msg, uint64_t timeout)
             break;
         }
 
-        temp += bytesToRead;
+        uint64_t timeDif = (SystemMonotonicMS() - timer);
+
+        if(timeDif>= timeout)
+        {
+            printf("TIMED OUT\n");
+            return -2;
+        }
+        temp += bytesRead;
         bytesToRead -= bytesRead;
-        printf("Read %d bytes\n", bytesRead);
     }
 
-    if(bytesToRead > 0)
-    {
-        printf("Timed out\n");
-        return -2;
-    }
+
     *temp = '\0';
-    printf("Message: %s", ptr);
-    msg = (char*)ptr;
+    *msg = (char*)ptr;
     return 0;
 }
 

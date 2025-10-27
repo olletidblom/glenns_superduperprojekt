@@ -34,7 +34,6 @@ typedef struct
 {
     smw_task* task;
     void (*callback)();
-    int socket;
     HTTP_Status status;
     HTTP_Method method;
     TCPClient* tcp_client;

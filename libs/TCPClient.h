@@ -26,7 +26,7 @@ int tcp_sendAll(TCPClient* client, const void* data, size_t len, uint64_t timeou
 
 ssize_t tcp_recieve(TCPClient* client, void* buffer, size_t len);
 
-int tcp_recieveAll(TCPClient* client, char* msg, uint64_t timeout);
+int tcp_recieveAll(TCPClient* client, char** msg, uint64_t timeout);
 
 void tcp_dispose(TCPClient* client);
 

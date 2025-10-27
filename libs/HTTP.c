@@ -41,20 +41,12 @@ int HTTP_Initialize(HTTP_Method method, HTTPClient** client)
 
 int HTTP_Get(HTTPClient* client)
 {
-
-
-    printf("Failed to connect to server\n");
-
-
     char request[1024];
     snprintf(request, sizeof(request), "GET / HTTP/1.1\r\n" "Host: %s\r\n" "Connection: close\r\n" "\r\n",
               client->tcp_client->hostname);
 
     int write_result = HTTP_Write(client, request, strlen(request));
 
-    printf("HTTP_Write result: %s\n", write_result);
-
-    scanf("%d", &write_result);
     if(write_result < 0)
     {
         printf("Failed to send request\n");
@@ -90,9 +82,7 @@ int HTTP_Connect(HTTPClient* client)
 
 int HTTP_Write(HTTPClient* client, char* buffer, size_t length)
 {
-    printf("HTTP_Write: Failed to send request\n");
     int result = tcp_sendAll(client->tcp_client, buffer, length, 5000);
-    printf("HTTP_Write: Failed to send request AFTER\n");
 
 
     if(result < 0)
@@ -103,7 +93,7 @@ int HTTP_Write(HTTPClient* client, char* buffer, size_t length)
 
 int HTTP_Read(HTTPClient* client)
 {
-    int result = tcp_recieveAll(client->tcp_client, client->response.message, 5000);
+    int result = tcp_recieveAll(client->tcp_client, &client->response.message, 5000);
 
     if(result < 0)
     printf("HTTP: Failed to receive data\n");
@@ -152,6 +142,7 @@ int HTTP_work(void* _Context)
             client->status = http_client_dispose;
             break;
         case http_client_dispose:
+            HTTP_Dispose(&client);
             break;
     }
 
@@ -176,5 +167,16 @@ HTTPClient* HTTP_run(HTTP_Method method, void (*_Callback)())
 
 void HTTP_Dispose(HTTPClient** client)
 {
+    if(client == NULL || *client == NULL)
+    return;
 
+    HTTPClient* _Client = *client;
+
+    if(_Client->task != NULL)
+    smw_destroy_task(_Client->task);
+
+    tcp_dispose(_Client->tcp_client);
+    free(_Client->response.message);
+    free(_Client);
+    *client = NULL;
 }
