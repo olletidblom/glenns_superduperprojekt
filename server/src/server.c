@@ -1,110 +1,87 @@
 // server.c - un micro-serveur qui accepte une connexion client, attend un message, et y répond
 // server.c - micro-server allowing client connection, expect a message and answers it
+#include "server.h"
+#include "../../libs/HTTP.h"
+#include "../../libs/TCPServer.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <stdbool.h>
 
-#define PORT 4242  // Server port
+
+#define PORT 8080  // Server port
 #define BACKLOG 10 // maximum connection at a time
 
-int main(void)
+
+static TCPServer g_TCPServer;
+
+
+bool server_init(server_s** srv)
+{
+    if(srv == NULL)
+    return false;
+
+    server_s* _Srv = (server_s*)malloc(sizeof(server_s));
+
+    if(_Srv == NULL)
+    return false;
+
+    _Srv->task = smw_create_task(_Srv, server);
+
+
+    *srv = _Srv;
+    return true;
+}
+
+void server_listen_accept()
 {
     printf("---- SERVER ----\n\n");
-    struct sockaddr_in sa;
-    int socket_fd;
-    int client_fd;
-    int status;
-    struct sockaddr_storage client_addr;
-    socklen_t addr_size;
-    char buffer[BUFSIZ];
-    int bytes_read;
 
-    // on prépare l'adresse et le port pour la socket de notre 
-    //Prepare socket adress and port 
-    memset(&sa, 0, sizeof sa);
-    sa.sin_family = AF_INET; // IPv4
-    sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // 127.0.0.1, localhost
-    sa.sin_port = htons(PORT);
+    tcpserver_listen(&g_TCPServer, PORT, BACKLOG);
+    
+    tcpserver_accept(&g_TCPServer);
+}
 
-    // on crée la socket, on a lit et on écoute dessus
-    //Create socket, read and listen
-    socket_fd = socket(sa.sin_family, SOCK_STREAM, 0);
-    if (socket_fd == -1) {
-        fprintf(stderr, "socket fd error: %s\n", strerror(errno));
-        return (1);
-    }
-    printf("Created server socket fd: %d\n", socket_fd);
+void server(void* _Context)
+{
+    server_s* _Srv = (server_s*)_Context;
 
-    status = bind(socket_fd, (struct sockaddr *)&sa, sizeof sa);
-    if (status != 0) {
-        fprintf(stderr, "bind error: %s\n", strerror(errno));
-        return (2);
-    }
-    printf("Bound socket to localhost port %d\n", PORT);
+    tcpserver_work(&g_TCPServer);
 
-    printf("Listening on port %d\n", PORT);
-    status = listen(socket_fd, BACKLOG);
-    if (status != 0) {
-        fprintf(stderr, "listen error: %s\n", strerror(errno));
-        return (3);
-    }
+    
+}
 
-    // on accepte une connexion entrante
-    // Allow connection
-    addr_size = sizeof client_addr;
-    client_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &addr_size);
-    if (client_fd == -1) {
-        fprintf(stderr, "client fd error: %s\n", strerror(errno));
-        return (4);
-    }
-    printf("Accepted new connection on client socket fd: %d\n", client_fd);
+server_s* server_run(void (*_Callback)())
+{
+    server_s* srv = NULL;
 
-    // on recoit un message via la socket client
-    // Receive message via client
-    bytes_read = 1;
-    while (bytes_read >= 0) {
-        printf("Reading client socket %d\n", client_fd);
-        bytes_read = recv(client_fd, buffer, BUFSIZ, 0);
-        if (bytes_read == 0) {
-            printf("Client socket %d: closed connection.\n", client_fd);
-            break ;
-        }
-        else if (bytes_read == -1) {
-            fprintf(stderr, "recv error: %s\n", strerror(errno));
-            break ;
-        }
-        else {
-            // Si on a bien reçu un message, on va l'imprimer
-            // puis renvoyer un message au client
-            // If message recieved, print it and send a message to client
-            char *msg = "Got your message.";
-            int msg_len = strlen(msg);
-            int bytes_sent;
+    if(!server_init(&srv))
+    return -1;
 
-            buffer[bytes_read] = '\0';
-            printf("Message received from client socket %d: \"%s\"\n", client_fd, buffer);
+    srv->callback = _Callback;
 
-            bytes_sent = send(client_fd, msg, msg_len, 0);
-            if (bytes_sent == -1) {
-                fprintf(stderr, "send error: %s\n", strerror(errno));
-            }
-            else if (bytes_sent == msg_len) {
-                printf("Sent full message to client socket %d: \"%s\"\n", client_fd, msg);
-            }
-            else {
-                printf("Sent partial message to client socket %d: %d bytes sent.\n", client_fd, bytes_sent);
-            }
-        }
-    }
+    
+    return srv;
 
-    printf("Closing client socket\n");
-    close(client_fd);
-    printf("Closing server socket\n");
-    close(socket_fd);
+}
 
-    return (0);
+void server_dispose(server_s** srv)
+{
+    if(srv == NULL || *srv == NULL)
+    return;
+
+    server_s* _Srv = *srv;
+
+    if(_Srv->task != NULL)
+    smw_destroy_task(_Srv->task);
+
+    tcpserver_dispose(&g_TCPServer);
+
+    free(_Srv);
+    *srv = NULL;
 }
