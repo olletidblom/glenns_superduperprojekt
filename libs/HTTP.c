@@ -115,24 +115,31 @@ int HTTP_ParseHeader(HTTPClient *client)
     */
 
     if (client == NULL)
-        return;
+        return -1;
 
-        printf("0\n");
+    if (client->HTTP_response == NULL)
+        return -2;
+
+    printf("0\n");
     printf("%s\n\n", client->HTTP_response);
-    printf("%d\n\n", strlen(client->HTTP_response));
-    char *myStr = strndup(client->HTTP_response, strlen(client->HTTP_response) + 1);
-    printf("%s", myStr);
-    printf("1\n");
+    printf("%zu\n\n", strlen(client->HTTP_response));
+    
+    // Replace strndup with standard C functions
+    size_t len = strlen(client->HTTP_response);
+    char *myStr = malloc(len + 1);
     if(myStr == NULL)
         return -1;
-    printf("2\n");
+    strcpy(myStr, client->HTTP_response);
+    
+    printf("%s\n", myStr);
+    printf("1\n");
     char* myPtr = strtok(myStr, " ");
     printf("tok1\n");
     myPtr = strtok(NULL, " ");
     printf("tok2\n");
     //strtokRepeat(myStr, 2);
     printf("3\n");
-    client->response_code = strtol(myStr, NULL, 10);
+    client->response_code = strtol(myPtr, NULL, 10);
     printf("4\n");
     if(client->response_code == 0)
     {

@@ -56,4 +56,10 @@ HTTPClient* HTTP_run(HTTP_Method method, void (*_Callback)());
 
 int HTTP_work(void* _Context);
 
+int HTTP_Connect(HTTPClient *client);
+int HTTP_Write(HTTPClient *client, char *buffer, size_t length);
+int HTTP_Read(HTTPClient *client);
+
+void HTTP_Dispose(HTTPClient **client);
+
 #endif

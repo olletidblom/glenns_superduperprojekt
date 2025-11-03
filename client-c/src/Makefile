@@ -54,3 +54,43 @@ clean:
 # Optional: run the program
 run: all
 	./$(TARGET)
+
+# API example
+api: $(BUILD_DIR)/api_example.o $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/HTTP.o $(BUILD_DIR)/API.o $(BUILD_DIR)/smw.o | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $^ -o $(BUILD_DIR)/api_example $(LDFLAGS)
+	@echo "✅ API example built successfully!"
+
+$(BUILD_DIR)/api_example.o: api_example.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/API.o: $(LIB_DIR)/API.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Run API example
+run-api: api
+	./$(BUILD_DIR)/api_example
+
+# JSON API example
+json-api: $(BUILD_DIR)/json_api_example.o $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/HTTP.o $(BUILD_DIR)/API.o $(BUILD_DIR)/smw.o | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $^ -o $(BUILD_DIR)/json_api_example $(LDFLAGS)
+	@echo "✅ JSON API example built successfully!"
+
+$(BUILD_DIR)/json_api_example.o: json_api_example.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Run JSON API example
+run-json-api: json-api
+	./$(BUILD_DIR)/json_api_example
+	./$(BUILD_DIR)/api_example
+
+# Simple API example
+simple-api: $(BUILD_DIR)/simple_api_example.o $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/HTTP.o $(BUILD_DIR)/API.o $(BUILD_DIR)/smw.o | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $^ -o $(BUILD_DIR)/simple_api_example $(LDFLAGS)
+	@echo "✅ Simple API example built successfully!"
+
+$(BUILD_DIR)/simple_api_example.o: simple_api_example.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Run simple API example
+run-simple-api: simple-api
+	./$(BUILD_DIR)/simple_api_example
