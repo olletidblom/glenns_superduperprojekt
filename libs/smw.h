@@ -28,5 +28,5 @@ void smw_work(uint64_t monTime);
 
 void smw_dispose();
 
-void smw_getTaskCount();
+int smw_getTaskCount();
 #endif // SMH_H
