@@ -109,31 +109,17 @@ int HTTP_Read(HTTPClient *client)
 
 int HTTP_ParseHeader(HTTPClient *client)
 {
-    /*
-    char *myPtr = strtok(myStr, " ");
-    myPtr = strtok(NULL, " ");
-    */
-
     if (client == NULL)
         return;
 
-        printf("0\n");
-    printf("%s\n\n", client->HTTP_response);
-    printf("%d\n\n", strlen(client->HTTP_response));
     char *myStr = strndup(client->HTTP_response, strlen(client->HTTP_response) + 1);
-    printf("%s", myStr);
-    printf("1\n");
     if(myStr == NULL)
         return -1;
-    printf("2\n");
+        
     char* myPtr = strtok(myStr, " ");
-    printf("tok1\n");
     myPtr = strtok(NULL, " ");
-    printf("tok2\n");
     //strtokRepeat(myStr, 2);
-    printf("3\n");
     client->response_code = strtol(myPtr, NULL, 10);
-    printf("4\n");
     if(client->response_code == 0)
     {
         printf("Failed to get response code\n");
