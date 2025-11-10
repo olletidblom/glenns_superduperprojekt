@@ -42,8 +42,6 @@ int tcp_connect(TCPClient* client)
         return -1;
     }
 
-    printf("Connecting to %s\n", res->ai_addr->sa_data);
-
     for(struct addrinfo* temp = res; temp; temp->ai_next)
     {
         sock = socket(temp->ai_family, temp->ai_socktype, temp->ai_protocol);
