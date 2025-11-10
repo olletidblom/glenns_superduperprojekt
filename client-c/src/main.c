@@ -12,7 +12,8 @@
 int main()
 {
     smw_init();
-    HTTP_run(http_GET, HTTP_work);
+    HTTPClient* client = NULL;
+    HTTP_Initialize(http_GET, &client);
 
     while(smw_getTaskCount() > 0)
     {

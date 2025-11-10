@@ -53,6 +53,7 @@ typedef struct
 
 
 
+int HTTP_Initialize(HTTP_Method method, HTTPClient **client);
 
 HTTPClient* HTTP_run(HTTP_Method method, void (*_Callback)());
 
