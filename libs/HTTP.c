@@ -15,6 +15,8 @@ int HTTP_Read(HTTPClient *client);
 
 int HTTP_Write(HTTPClient *client, char *buffer, size_t length);
 
+void HTTP_Dispose(HTTPClient **client);
+
 void strtokRepeat(char *str, int repetition) {
   char *myPtr = strtok(str, " ");
   int i;
