@@ -1,0 +1,46 @@
+
+#ifndef __HTTPServerConnection_h_
+#define __HTTPServerConnection_h_
+
+#include "smw.h"
+#include "../TCPClient.h"
+
+typedef int (*HTTPServerConnection_OnRequest)(void* _Context);
+
+
+typedef struct 
+{
+	char* queries;
+	char* end_point;
+}HTTPRequest;
+
+
+typedef struct
+{
+	TCPClient tcpClient;
+
+	void* context;
+	HTTPServerConnection_OnRequest onRequest;
+
+	char* method;
+	char* host;
+	char* url_path;
+	char* url;
+
+	smw_task* task;
+
+	HTTPRequest httpRequest;
+} HTTPServerConnection;
+
+
+int HTTPServerConnection_Initiate(HTTPServerConnection* _Connection, int _FD);
+int HTTPServerConnection_InitiatePtr(int _FD, HTTPServerConnection** _ConnectionPtr);
+
+void HTTPServerConnection_SetCallback(HTTPServerConnection* _Connection, void* _Context, HTTPServerConnection_OnRequest _OnRequest);
+int HTTPServerConnection_SendRequest(void *_Context, char *_Host, char *_Request);
+int HTTPServerConnection_SendResponse(void* _Context, char* _Response);
+
+void HTTPServerConnection_Dispose(HTTPServerConnection* _Connection);
+void HTTPServerConnection_DisposePtr(HTTPServerConnection** _ConnectionPtr);
+
+#endif //__HTTPServerConnection_h_

@@ -8,7 +8,7 @@
 void http_client_work(void* _Context, uint64_t _MonTime);
 void http_client_dispose(http_client** _ClientPtr);
 
-//----------------------------------------------------
+//---------------------------------------------------
 
 int http_client_init(const char* _URL, http_client** _ClientPtr)
 {
