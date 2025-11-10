@@ -1,6 +1,8 @@
 #ifndef HTTP_H
 #define HTTP_H
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "smw.h"
 #include "TCPClient.h"
 #include <stddef.h>

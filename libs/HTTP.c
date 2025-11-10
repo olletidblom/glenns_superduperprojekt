@@ -132,7 +132,7 @@ int HTTP_ParseHeader(HTTPClient *client)
     printf("tok2\n");
     //strtokRepeat(myStr, 2);
     printf("3\n");
-    client->response_code = strtol(myStr, NULL, 10);
+    client->response_code = strtol(myPtr, NULL, 10);
     printf("4\n");
     if(client->response_code == 0)
     {
