@@ -27,7 +27,7 @@ int HTTP_Initialize(HTTP_Method method, HTTPClient **client)
 {
     TCPClient *tcp_client = (TCPClient *)malloc(sizeof(TCPClient));
 
-    tcp_init(tcp_client, "example.com", 80);
+    tcp_init(tcp_client, "kontoret.onvo.se", 10180);
 
     if (client == NULL || tcp_client->hostname == NULL)
         return -1;
