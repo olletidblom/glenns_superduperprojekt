@@ -2,6 +2,7 @@
 #include "TCPClient.h"
 #include <errno.h>
 #include <netdb.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int HTTP_work(void *_Context);
+// int HTTP_work(void *_Context);
 
 int HTTP_Read(HTTPClient *client);
 
@@ -128,11 +129,11 @@ int HTTP_ParseHeader(HTTPClient *client) {
   return 0;
 }
 
-int HTTP_work(void *_Context) {
+void HTTP_work(void *_Context, uint64_t monTime) {
   HTTPClient *client = (HTTPClient *)_Context;
 
   if (client == NULL)
-    return -1;
+    return;
 
   switch (client->status) {
   case http_client_initialized:
@@ -140,7 +141,7 @@ int HTTP_work(void *_Context) {
     break;
   case http_client_connected:
     if (HTTP_Connect(client) < 0) {
-      return http_failed_to_connect;
+      return; // http_failed_to_connect;
     }
     if (client->method == http_POST) {
       client->status = http_client_POST;
@@ -153,7 +154,7 @@ int HTTP_work(void *_Context) {
     client->status = http_client_header;
   case http_client_GET:
     if (HTTP_Get(client) < 0) {
-      return http_failed_to_read;
+      return; // http_failed_to_read;
     }
     client->status = http_client_parse_header;
     break;
