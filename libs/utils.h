@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 
-uint64_t static SystemMonotonicMS()
+static uint64_t SystemMonotonicMS()
 {
 	long            ms;
 	time_t          s;
