@@ -2,19 +2,12 @@
 #define API_H
 
 #include "../WeatherServerInstance.h"
+#include "../CURL.h"
 #include <stdint.h>
 
 typedef int (*API_OnRequest)(void* _Context, char* _Response);
-typedef int (*API_SendRequest)(void* _Context, char* _Host, char* _Request);
+typedef void* (*API_SendRequest)(void* _Context, char* _Request, void* (*_OnResponse)(char* _Response));
 
-typedef struct
-{
-    void* context;
-    API_OnRequest onRequest;
-    API_SendRequest sendRequest;
-    WeatherServerInstance* instance;
-    char* parsed_response;
-} API;
 
 typedef struct
 {
@@ -27,6 +20,19 @@ typedef struct
     const char* path;
     const char* city_name;
 }Geocoding_API;
+
+typedef struct
+{
+    void* context;
+    API_OnRequest onRequest;
+    API_SendRequest sendRequest;
+    WeatherServerInstance* instance;
+    Geocoding_API geocoding;
+    Weather_API weather;
+    char* parsed_response;
+} API;
+
+
 
 int API_Initiate(API* api, WeatherServerInstance* instance, API_OnRequest onRequest, API_SendRequest sendRequest);
 

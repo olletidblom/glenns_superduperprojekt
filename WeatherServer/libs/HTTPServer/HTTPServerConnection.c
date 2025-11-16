@@ -44,18 +44,32 @@ void HTTPServerConnection_SetCallback(HTTPServerConnection *_Connection, void *_
 	_Connection->onRequest = _OnRequest;
 }
 
-int HTTPServerConnection_SendRequest(void *_Context, char *_Host, char *_Request)
+void* HTTPServerConnection_SendRequest(void *_Context, char *_Request, HTTPServerConnection_OnResponse _OnResponse)
 {
+	HTTPServerConnection *_Connection = (HTTPServerConnection *)_Context;
+	_Connection->onResponse = _OnResponse;
 
-	return 0;
+	
+	return _Connection->onResponse(_Request);
 }
 
 int HTTPServerConnection_SendResponse(void *_Context, char *_Response)
 {
-	// HTTPServerConnection* _Connection = (HTTPServerConnection*)_Context;
-	_Response = "HELLO CLIENT!!";
-	printf("Sending Response: %s\n", _Response);
-	// TCPClient_Write(&_Connection->tcpClient, (const uint8_t*)_Response, strlen(_Response));
+	HTTPServerConnection* _Connection = (HTTPServerConnection*)_Context;
+	if (_Connection == NULL || _Response == NULL)
+		return -1;
+
+	char response_buffer[2048];
+
+	snprintf(response_buffer, sizeof(response_buffer),
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: %zu\r\n"
+		"Content-Type: application/json\r\n"
+		"\r\n"
+		"%s",
+		strlen(_Response), _Response);
+
+	TCPClient_Write(&_Connection->tcpClient, (const uint8_t*)response_buffer, strlen(response_buffer));
 	return 0;
 }
 

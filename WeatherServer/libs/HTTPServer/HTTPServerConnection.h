@@ -6,6 +6,7 @@
 #include "../TCPClient.h"
 
 typedef int (*HTTPServerConnection_OnRequest)(void* _Context);
+typedef void* (*HTTPServerConnection_OnResponse)(char* _Response);
 
 
 typedef struct 
@@ -21,6 +22,7 @@ typedef struct
 
 	void* context;
 	HTTPServerConnection_OnRequest onRequest;
+	HTTPServerConnection_OnResponse onResponse;
 
 	char* method;
 	char* host;
@@ -37,7 +39,7 @@ int HTTPServerConnection_Initiate(HTTPServerConnection* _Connection, int _FD);
 int HTTPServerConnection_InitiatePtr(int _FD, HTTPServerConnection** _ConnectionPtr);
 
 void HTTPServerConnection_SetCallback(HTTPServerConnection* _Connection, void* _Context, HTTPServerConnection_OnRequest _OnRequest);
-int HTTPServerConnection_SendRequest(void *_Context, char *_Host, char *_Request);
+void* HTTPServerConnection_SendRequest(void *_Context, char *_Request, HTTPServerConnection_OnResponse _OnResponse);
 int HTTPServerConnection_SendResponse(void* _Context, char* _Response);
 
 void HTTPServerConnection_Dispose(HTTPServerConnection* _Connection);
