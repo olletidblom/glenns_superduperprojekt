@@ -1,5 +1,5 @@
-#ifndef HTTP_H
-#define HTTP_H
+#ifndef HTTP_SERVER_H
+#define HTTP_SERVER_H
 
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
@@ -41,9 +41,13 @@ typedef struct {
   HTTP_Status status;
   HTTP_Method method;
   TCPServer *tcp_server;
-  char *HTTP_response;
-  char *url;
+
   int response_code;
+
+  char* method_url;
+	char* host;
+	char* url_path;
+	char* url;
 
 } HTTPServer;
 
