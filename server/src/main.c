@@ -1,4 +1,5 @@
 #include "../../libs/utils.h"
+#include "../../libs/HTTPServer.h"
 #include "server.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,8 +7,11 @@
 int main() {
   smw_init();
 
-  server_s *srv = server_run(server);
-  server_listen_accept();
+  HTTPServer *httpServer = NULL;
+  if (!HTTPServer_Initialize(http_POST, &httpServer)) {
+    printf("Failed to initialize HTTP server\n");
+    return -1;
+  }
 
   uint64_t monTime = 0;
   while (smw_getTaskCount() > 0) {
@@ -16,7 +20,7 @@ int main() {
   }
 
   smw_dispose();
-  server_dispose(&srv);
+  
 
   return 0;
 }

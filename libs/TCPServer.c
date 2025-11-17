@@ -11,7 +11,14 @@
 #include <unistd.h>
 
 ssize_t tcpserver_recieve(TCPServer *server, void *buffer, size_t len) {
-  return recv(server->server_socket, buffer, len, 0);
+  return recv(server->server_socket, buffer, len, MSG_DONTWAIT);
+}
+
+ssize_t tcpserver_send(TCPServer *server, void *data, size_t len) {
+  ssize_t result = send(server->server_socket, data, len, MSG_NOSIGNAL);
+  //printf("send error %d: %s\n", errno, strerror(errno));
+  //scanf("%d", result);
+  return result;
 }
 
 int tcpserver_listen(TCPServer *server, int port, int backlog) {
@@ -78,14 +85,9 @@ int tcpserver_accept(TCPServer *server) {
 
   if (sock < 0) {
     if (errno == EWOULDBLOCK || errno == EAGAIN)
-      return 0;
+      return -1;
 
     perror("accept");
-    return -1;
-  }
-
-  if (sock < 0) {
-    printf("Failed to accept connection\n");
     return -1;
   }
 

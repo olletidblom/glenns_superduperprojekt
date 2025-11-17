@@ -16,6 +16,8 @@ typedef struct {
 
 ssize_t tcpserver_recieve(TCPServer *server, void *buffer, size_t len);
 
+ssize_t tcpserver_send(TCPServer *server, void *data, size_t len);
+
 int tcpserver_listen(TCPServer *server, int port, int backlog);
 
 int tcpserver_accept(TCPServer *server);

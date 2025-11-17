@@ -51,13 +51,13 @@ int HTTP_Accept(HTTPServer *server) {
 }
 
 int HTTP_Write(HTTPServer *server, char *buffer, size_t length) {
-  /*int result = tcp_sendAll(server->tcp_server, buffer, length, 5000);
+  int result = tcpserver_send(server->tcp_server, (char*)buffer, length);
 
   if (result < 0)
     printf("HTTP: Failed to send data\n");
 
-  return result;*/
-  return 0;
+  printf("message sent: %s\n", buffer);
+  return result;
 }
 
 int HTTP_Read(HTTPServer *server) {
@@ -107,28 +107,23 @@ int HTTP_ParseHeader(HTTPServer *server) {
   return 0;
 }
 
-int HTTP_Post(HTTPServer *server) {
-  char *data = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
-  size_t data_length = strlen(data);
-
-  char request[1024];
-  snprintf(request, sizeof(request),
-           "POST / HTTP/1.1\r\n"
-           "HOST: %s\r\n"
-           "Content-Type: application/json\r\n"
-           "Content-Length: %zu\r\n"
-           "Connection: close\r\n"
-           "\r\n"
-           "%s",
-           "localhost", data_length, data);
-
-  int write_result = HTTP_Write(server, request, strlen(request));
-
-  if (write_result < 0) {
-    printf("Failed to send request\n");
-    close(server->tcp_server->server_socket);
+int HTTPServer_SendResponse(HTTPServer *server, int response_code, char *body) {
+  if (server == NULL)
     return -1;
-  }
+
+  body = NULL;
+  char* input = "{\"name\":\"Alice\",\"age\":30}";
+
+  char response[1024];
+  int length = snprintf(response, sizeof(response),
+                        "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: %zu\r\n"
+                        "Content-Type: application/json\r\n"
+                        "\r\n"
+                        "%s",
+                        strlen(input), input);
+
+  return HTTP_Write(server, response, length);
 }
 
 void HTTP_work(void *_Context, uint64_t monTime) {
@@ -144,7 +139,7 @@ void HTTP_work(void *_Context, uint64_t monTime) {
   case http_server_awaiting_connection:
     if (HTTP_Accept(server) == 0) {
       printf("HTTP Server: Client connected\n");
-      server->status = http_server_connected;
+      server->status = http_server_POST;
       break;
     }
     break;
@@ -154,20 +149,19 @@ void HTTP_work(void *_Context, uint64_t monTime) {
       printf("HTTP Server: Failed to read data\n");
       break;
     }
-    server->status = http_server_parse_header;
+    server->status = http_server_POST;
     break;
   case http_server_parse_header:
     if (HTTP_ParseHeader(server) < 0) {
       printf("HTTP Server: Failed to parse header\n");
-      server->status = http_server_dispose;
+      //server->status = http_server_dispose;
       break;
     }
     server->status = http_server_POST;
     break;
   case http_server_POST:
-    if (HTTP_Post(server) < 0) {
-      printf("HTTP Server: Failed to handle POST request\n");
-      server->status = http_server_dispose;
+      printf("HTTP Server: Handling POST request\n");
+      if (HTTPServer_SendResponse(server, 200, NULL) < 0) {
       break;
     }
     server->status = http_server_dispose;
