@@ -157,8 +157,8 @@ int HTTPServer_SendResponse(HTTPServer *server, int response_code, char *body)
   if (server == NULL)
     return -1;
 
-  body = NULL;
-  char *input = "{\"name\":\"Alice\",\"age\":30}";
+  body = "{\"name\":\"Alice\",\"age\":30}";
+
 
   char response[1024];
   int length = snprintf(response, sizeof(response),
@@ -167,7 +167,7 @@ int HTTPServer_SendResponse(HTTPServer *server, int response_code, char *body)
                         "Content-Type: application/json\r\n"
                         "\r\n"
                         "%s",
-                        strlen(input), input);
+                        strlen(body), body);
   int result = HTTPServer_Write(server, response, length);
   return result;
 }
