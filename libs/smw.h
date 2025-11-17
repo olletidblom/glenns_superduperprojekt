@@ -9,7 +9,7 @@
 
 typedef struct {
   void *context;
-  int (*callback)(void *context, uint64_t monTime);
+  void (*callback)(void *context, uint64_t monTime);
 } smw_task;
 
 typedef struct {

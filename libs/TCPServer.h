@@ -4,25 +4,24 @@
 #define _POSIX_C_SOURCE 200809L
 #include "TCPClient.h"
 #include <stddef.h>
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>
 
+typedef struct {
+  int server_socket;
+  int backlog;
+  int port;
+  TCPClient client[10];
+} TCPServer;
 
-typedef struct 
-{
-    int server_socket;
-    int backlog;
-    int port;
-    TCPClient client[10];
-}TCPServer;
+ssize_t tcpserver_recieve(TCPServer *server, void *buffer, size_t len);
 
+int tcpserver_listen(TCPServer *server, int port, int backlog);
 
-int tcpserver_listen(TCPServer* server, int port, int backlog);
+int tcpserver_accept(TCPServer *server);
 
-int tcpserver_accept(TCPServer* server);
+void tcpserver_work(TCPServer *server);
 
-void tcpserver_work(TCPServer* server);
-
-void tcpserver_dispose(TCPServer* server);
+void tcpserver_dispose(TCPServer *server);
 
 #endif
