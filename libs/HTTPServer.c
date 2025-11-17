@@ -137,7 +137,7 @@ void HTTP_work(void *_Context, uint64_t monTime) {
   HTTPServer *server = (HTTPServer *)_Context;
 
   static uint64_t super_cool_timer;
-  static bool super_cool_timer_is_set = false;
+  static bool super_cool_timer_is_set;
 
   if (server == NULL)
     return;
@@ -145,6 +145,7 @@ void HTTP_work(void *_Context, uint64_t monTime) {
   switch (server->status) {
   case http_server_initialized:
     server->status = http_server_awaiting_connection;
+    super_cool_timer_is_set = false;
     break;
   case http_server_awaiting_connection:
     if (HTTP_Accept(server) == 0) {
@@ -158,7 +159,10 @@ void HTTP_work(void *_Context, uint64_t monTime) {
     if (!super_cool_timer_is_set)
       super_cool_timer_is_set = true;
     super_cool_timer = SystemMonotonicMS();
-    if (result < 0 && super_cool_timer > (SystemMonotonicMS() - 5000)) {
+    if (super_cool_timer > (SystemMonotonicMS() - 5000)) {
+      // TODO: add functionallity if enough time has passed
+    }
+    if (result < 0) {
       printf("HTTP Server: Failed to read data\n");
       break;
     }
