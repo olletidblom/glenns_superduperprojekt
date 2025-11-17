@@ -1,4 +1,5 @@
 #include "HTTPServer.h"
+#include "utils.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -134,6 +135,8 @@ int HTTP_Post(HTTPServer *server) {
 void HTTP_work(void *_Context, uint64_t monTime) {
   HTTPServer *server = (HTTPServer *)_Context;
 
+  static uint64_t *super_cool_timer = NULL;
+
   if (server == NULL)
     return;
 
@@ -150,7 +153,9 @@ void HTTP_work(void *_Context, uint64_t monTime) {
     break;
   case http_server_connected:
     int result = HTTP_Read(server);
-    if (result < 0) {
+    if (!super_cool_timer)
+      *super_cool_timer = SystemMonotonicMS();
+    if (result < 0 && *super_cool_timer > (SystemMonotonicMS() - 5000)) {
       printf("HTTP Server: Failed to read data\n");
       break;
     }
