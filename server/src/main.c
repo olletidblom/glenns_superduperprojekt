@@ -20,7 +20,7 @@ int main() {
   }
 
   smw_dispose();
-  
+  HTTPServer_Dispose(&httpServer);
 
   return 0;
 }

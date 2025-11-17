@@ -45,7 +45,7 @@ void server_listen_accept() {
 void server(void *_Context) {
   server_s *_Srv = (server_s *)_Context;
 
-  tcpserver_work(&g_TCPServer);
+
 }
 
 server_s *server_run(void (*_Callback)()) {

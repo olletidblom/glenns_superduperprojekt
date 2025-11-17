@@ -10,7 +10,7 @@
 typedef enum {
   http_server_initialized = 0,
   http_server_awaiting_connection = 1,
-  http_server_connected = 2,
+  http_server_connection_received = 2,
   http_server_parse_header = 3,
   http_server_POST = 4,
   http_server_dispose = 5,
@@ -52,8 +52,8 @@ typedef struct {
 } HTTPServer;
 
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server);
-HTTPServer *HTTP_run(HTTP_Method method, void (*_Callback)());
 
-void HTTP_work(void *_Context, uint64_t monTime);
 
+
+void HTTPServer_Dispose(HTTPServer **server);
 #endif
