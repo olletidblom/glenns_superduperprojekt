@@ -54,7 +54,7 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *bo
   if (connection == NULL)
     return -1;
 
-  body = "{\"name\":\"Alice\",\"age\":30}";
+  body = "Göteborg kraschar ALDRIG!";
 
 
   char response[1024];
