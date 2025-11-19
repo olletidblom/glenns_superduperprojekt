@@ -30,7 +30,7 @@ int tcpserver_listen(TCPServer *server, int port, int backlog, TCPServer_OnConne
 int tcpserver_accept(TCPServer *server);
 
 
-void tcpserver_disconnect(TCPServer *server, int socket); 
+void tcpserver_disconnect(int socket); 
 
 void tcpserver_dispose(TCPServer *server);
 

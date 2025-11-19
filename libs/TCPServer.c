@@ -143,17 +143,12 @@ void tcpserver_work(void* _Context, uint64_t monTime)
   tcpserver_accept(server);
 }
 
-void tcpserver_disconnect(TCPServer *server, int socket)
+void tcpserver_disconnect(int socket)
 {
-  for (int i = 0; i < server->backlog; i++)
-  {
-    if (server->client[i].client_socket == socket)
-    {
-      close(server->client[i].client_socket);
-      printf("Disconnected socket %d\n", server->client[i].client_socket);
-      server->client[i].client_socket = -1;
-    }
-  }
+
+  close(socket);
+  printf("Disconnected socket %d\n", socket);
+
 }
 
 void tcpserver_dispose(TCPServer *server)

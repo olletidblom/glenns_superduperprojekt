@@ -60,6 +60,7 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *bo
   char response[1024];
   int length = snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\n" "Content-Length: %zu\r\n" "Content-Type: application/json\r\n" "\r\n" "%s", strlen(body), body);
   int result = HTTPConnection_Write(connection, response, length);
+  tcpserver_disconnect(connection->socket);
   return result;
 }
 

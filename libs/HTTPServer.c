@@ -193,7 +193,7 @@ void HTTPServer_Disconnect(HTTPServer *server)
   if (server == NULL)
     return;
 
-  tcpserver_disconnect(server->tcp_server, server->tcp_server->client->client_socket);
+  //tcpserver_disconnect(server->tcp_server, server->tcp_server->client->client_socket);
 }
 
 void HTTPServer_Dispose(HTTPServer **server)
