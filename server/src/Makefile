@@ -9,11 +9,11 @@ LIB_DIR   = ../../libs
 BUILD_DIR = ../build
 
 # Source files
-SRC_FILE = server.c main.c
-LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/TCPServer.c  $(LIB_DIR)/smw.c $(LIB_DIR)/HTTPServer.c
+SRC_FILE = main.c
+LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/TCPServer.c  $(LIB_DIR)/smw.c $(LIB_DIR)/HTTPServer.c $(LIB_DIR)/HTTPServerConnection.c
 
 # Object files
-OBJ_FILES = $(BUILD_DIR)/server.o $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o
+OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o
 
 # Output binary
 TARGET = $(BUILD_DIR)/server_program
@@ -27,8 +27,7 @@ $(TARGET): $(OBJ_FILES)
 	@echo "✅ Build complete: $(TARGET)"
 
 # Compile rules
-$(BUILD_DIR)/server.o: $(SRC_DIR)/server.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+
 
 $(BUILD_DIR)/TCPClient.o: $(LIB_DIR)/TCPClient.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -37,6 +36,9 @@ $(BUILD_DIR)/TCPServer.o: $(LIB_DIR)/TCPServer.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/HTTPServer.o: $(LIB_DIR)/HTTPServer.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/HTTPServerConnection.o: $(LIB_DIR)/HTTPServerConnection.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/smw.o: $(LIB_DIR)/smw.c | $(BUILD_DIR)

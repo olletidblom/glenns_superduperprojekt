@@ -9,175 +9,195 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int HTTP_Write(HTTPServer *server, char *buffer, size_t length);
+int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length);
 
-void HTTP_Dispose(HTTPServer **server);
+void HTTPServer_work(void *_Context, uint64_t monTime);
 
-void strtokRepeat(char *str, int repetition) {
-  char *myPtr = strtok(str, " ");
-  int i;
-  for (i = 0; i < (repetition - 1); i++) {
-    myPtr = strtok(NULL, " ");
-  }
-}
+void HTTPServer_Disconnect(HTTPServer *server);
 
-int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server) {
-  TCPServer *tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
+void HTTPServer_OnConnect(void* _Context, int socket);
 
-  if (server == NULL)
-    return -1;
+int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
+{
 
+  TCPServer* tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
   HTTP_Status status;
   HTTPServer *http_server = (HTTPServer *)malloc(sizeof(HTTPServer));
 
-  http_server->task = smw_create_task(http_server, HTTP_work);
+  http_server->task = smw_create_task(http_server, HTTPServer_work);
   http_server->status = http_server_initialized;
   http_server->method = method;
 
-  http_server->tcp_server = tcp_server;
 
-  tcpserver_listen(http_server->tcp_server, 8080, 10);
+  printf("Initializing TCP server\n");
+  tcpserver_listen(tcp_server, 10180, 1000, HTTPServer_OnConnect, http_server);
 
   *server = http_server;
-}
-
-int HTTP_Accept(HTTPServer *server) {
-  int result = tcpserver_accept(server->tcp_server);
-
-  if (result < 0)
-    printf("HTTP: Failed to connect to client\n");
-
-  return result;
-}
-
-int HTTP_Write(HTTPServer *server, char *buffer, size_t length) {
-  /*int result = tcp_sendAll(server->tcp_server, buffer, length, 5000);
-
-  if (result < 0)
-    printf("HTTP: Failed to send data\n");
-
-  return result;*/
   return 0;
 }
 
-int HTTP_Read(HTTPServer *server) {
-  char buffer[512];
-  int result = tcpserver_recieve(server->tcp_server, buffer, sizeof(buffer));
 
-  if (result < 0)
-    printf("HTTP: Failed to receive data\n");
-  server->HTTP_response = strndup(buffer, result);
+void HTTPServer_OnConnect(void* _Context, int socket)
+{
+  printf("HTTP Server: Connection received on socket %d\n", socket);
+  HTTPServer* server = (HTTPServer *)_Context;
+
+  if (server == NULL)
+    return;
+
+  HTTPServerConnection* connection = NULL;
+  if( HTTPServerConnection_Initialize(&connection, socket) < 0)
+  {
+    printf("Failed to initialize HTTP server connection\n");
+    return;
+  }
+
+}
+
+int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length)
+{
+  int result = tcpserver_send(server->tcp_server, (char *)buffer, length);
+
+  printf("message sent: %s\n", buffer);
   return result;
 }
 
-int HTTP_ParseHeader(HTTPServer *server) {
-  /*
-  char *myPtr = strtok(myStr, " ");
-  myPtr = strtok(NULL, " ");
-  */
+int HTTPServer_Read(HTTPServer *server, uint8_t *buffer, size_t length)
+{
+  int result = tcpserver_recieve(server->tcp_server, buffer, length);
+
+  return result;
+}
+
+int HTTPServer_ParseHeader(HTTPServer *server)
+{
 
   if (server == NULL)
     return -1;
 
-  if (server->HTTP_response == NULL)
-    return -2;
+  server->method_url = NULL;
+  server->url = NULL;
+  server->host = NULL;
+  server->url_path = NULL;
 
-  char *myStr =
-      strndup(server->HTTP_response, strlen(server->HTTP_response) + 1);
-  printf("%s", myStr);
+  char buffer[1024];
 
-  if (myStr == NULL)
-    return -3;
+  int bytesRead = HTTPServer_Read(server, (uint8_t *)buffer, sizeof(buffer));
 
-  char *myPtr = strtok(myStr, " ");
-
-  myPtr = strtok(NULL, " ");
-
-  server->response_code = strtol(myPtr, NULL, 10);
-
-  if (server->response_code == 0) {
-    printf("Failed to get response code\n");
-    free(myStr);
-    return -4;
+  if (bytesRead < 0)
+  {
+    return -1;
   }
 
-  printf("Response code: %d\n", server->response_code);
-  free(myStr);
+  if (bytesRead > 0)
+  {
+    // printf("Data: %s\n", buffer);
+    buffer[bytesRead] = '\0';
+    char *ptr = &buffer[0];
+    char *method = strchr(ptr, ' ');
+    if (method != NULL)
+    {
+      int method_length = method - ptr;
 
+      server->method_url = strndup(ptr, method_length);
+
+      if (server->method_url == NULL)
+      {
+        printf("HTTPServerConnection_TaskWork: Failed to copy method\n");
+      }
+    }
+
+    char *url_path = strchr(ptr, '/');
+
+    if (url_path != NULL)
+    {
+      char *url_end = strchr(url_path, ' ');
+
+      if (url_end != NULL)
+      {
+        int url_length = url_end - url_path;
+
+        server->url_path = strndup(url_path, url_length);
+        if (server->url_path == NULL)
+        {
+          printf("HTTPServerConnection_TaskWork: Failed to copy url\n");
+        }
+      }
+    }
+
+    char *host = strstr(ptr, "Host: ");
+    if (host != NULL)
+    {
+      host += strlen("Host: ");
+
+      char *eol = strstr(host, "\r\n");
+
+      if (eol != NULL)
+      {
+        int url_length = eol - host;
+
+        server->host = strndup(host, url_length);
+
+        if (server->host == NULL)
+        {
+          printf("HTTPServerConnection_TaskWork: Failed to copy url\n");
+        }
+      }
+    }
+  }
+
+  if (server->method_url != NULL && server->host != NULL && (strcmp(server->method_url, "GET") == 0))
+  {
+    char temp_buffer[1024];
+
+    snprintf(temp_buffer, sizeof(temp_buffer), "http://%s%s", server->host, server->url_path);
+    // printf("Temp URL: %s\n", temp_buffer);
+    free(server->url_path);
+    free(server->host);
+    free(server->method_url);
+
+    server->url = strdup(temp_buffer);
+    if (strstr(buffer, "\r\n\r\n"))
+      printf("HTTP Server: Finished parsing header: %s\n", server->url);
+
+  }
   return 0;
 }
 
-int HTTP_Post(HTTPServer *server) {
-  char *data = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
-  size_t data_length = strlen(data);
-
-  char request[1024];
-  snprintf(request, sizeof(request),
-           "POST / HTTP/1.1\r\n"
-           "HOST: %s\r\n"
-           "Content-Type: application/json\r\n"
-           "Content-Length: %zu\r\n"
-           "Connection: close\r\n"
-           "\r\n"
-           "%s",
-           "localhost", data_length, data);
-
-  int write_result = HTTP_Write(server, request, strlen(request));
-
-  if (write_result < 0) {
-    printf("Failed to send request\n");
-    close(server->tcp_server->server_socket);
+int HTTPServer_SendResponse(HTTPServer *server, char *body)
+{
+  if (server == NULL)
     return -1;
-  }
+
+  body = "{\"name\":\"Alice\",\"age\":30}";
+
+
+  char response[1024];
+  int length = snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\n" "Content-Length: %zu\r\n" "Content-Type: application/json\r\n" "\r\n" "%s", strlen(body), body);
+  int result = HTTPServer_Write(server, response, length);
+  return result;
 }
 
-void HTTP_work(void *_Context, uint64_t monTime) {
+void HTTPServer_work(void *_Context, uint64_t monTime)
+{
   HTTPServer *server = (HTTPServer *)_Context;
 
   if (server == NULL)
     return;
 
-  switch (server->status) {
-  case http_server_initialized:
-    server->status = http_server_awaiting_connection;
-    break;
-  case http_server_awaiting_connection:
-    if (HTTP_Accept(server) == 0) {
-      printf("HTTP Server: Client connected\n");
-      server->status = http_server_connected;
-      break;
-    }
-    break;
-  case http_server_connected:
-    int result = HTTP_Read(server);
-    if (result < 0) {
-      printf("HTTP Server: Failed to read data\n");
-      break;
-    }
-    server->status = http_server_parse_header;
-    break;
-  case http_server_parse_header:
-    if (HTTP_ParseHeader(server) < 0) {
-      printf("HTTP Server: Failed to parse header\n");
-      server->status = http_server_dispose;
-      break;
-    }
-    server->status = http_server_POST;
-    break;
-  case http_server_POST:
-    if (HTTP_Post(server) < 0) {
-      printf("HTTP Server: Failed to handle POST request\n");
-      server->status = http_server_dispose;
-      break;
-    }
-    server->status = http_server_dispose;
-    break;
-  case http_server_dispose:
-    HTTP_Dispose(&server);
-  }
+
 }
 
-void HTTP_Dispose(HTTPServer **server) {
+void HTTPServer_Disconnect(HTTPServer *server)
+{
+  if (server == NULL)
+    return;
+
+  //tcpserver_disconnect(server->tcp_server, server->tcp_server->client->client_socket);
+}
+
+void HTTPServer_Dispose(HTTPServer **server)
+{
   if (server == NULL || *server == NULL)
     return;
 
@@ -187,7 +207,7 @@ void HTTP_Dispose(HTTPServer **server) {
     smw_destroy_task(_server->task);
 
   tcpserver_dispose(_server->tcp_server);
-  free(_server->HTTP_response);
+  free(_server->url);
   free(_server);
   *server = NULL;
 }

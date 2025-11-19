@@ -1,8 +1,9 @@
-#ifndef HTTP_H
-#define HTTP_H
+#ifndef HTTP_SERVER_H
+#define HTTP_SERVER_H
 
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
+#include "HTTPServerConnection.h"
 #include "smw.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -10,7 +11,7 @@
 typedef enum {
   http_server_initialized = 0,
   http_server_awaiting_connection = 1,
-  http_server_connected = 2,
+  http_server_connection_received = 2,
   http_server_parse_header = 3,
   http_server_POST = 4,
   http_server_dispose = 5,
@@ -34,22 +35,26 @@ typedef struct
 }HTTP_Response;
 */
 
+
 typedef struct {
   smw_task *task;
-  void (*callback)();
-  void *context;
   HTTP_Status status;
   HTTP_Method method;
   TCPServer *tcp_server;
-  char *HTTP_response;
-  char *url;
+
+  void* context;
   int response_code;
+
+  char* method_url;
+	char* host;
+	char* url_path;
+	char* url;
 
 } HTTPServer;
 
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server);
-HTTPServer *HTTP_run(HTTP_Method method, void (*_Callback)());
 
-void HTTP_work(void *_Context, uint64_t monTime);
 
+
+void HTTPServer_Dispose(HTTPServer **server);
 #endif

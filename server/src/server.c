@@ -2,7 +2,7 @@
 // message, et y répond server.c - micro-server allowing client connection,
 // expect a message and answers it
 #include "server.h"
-#include "../../libs/HTTP.h"
+#include "../../libs/HTTPServer.h"
 #include "../../libs/TCPServer.h"
 #include <errno.h>
 #include <netdb.h>
@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define PORT 10180 // Server port
+#define PORT 8080 // Server port
 #define BACKLOG 10 // maximum connection at a time
 
 static TCPServer g_TCPServer;
@@ -45,7 +45,7 @@ void server_listen_accept() {
 void server(void *_Context) {
   server_s *_Srv = (server_s *)_Context;
 
-  tcpserver_work(&g_TCPServer);
+
 }
 
 server_s *server_run(void (*_Callback)()) {

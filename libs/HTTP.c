@@ -29,7 +29,7 @@ void strtokRepeat(char *str, int repetition) {
 int HTTP_Initialize(HTTP_Method method, HTTPClient **client) {
   TCPClient *tcp_client = (TCPClient *)malloc(sizeof(TCPClient));
 
-  tcp_init(tcp_client, "kontoret.onvo.se", 10180);
+  tcp_init(tcp_client, "localhost", 8080);
 
   if (client == NULL || tcp_client->hostname == NULL)
     return -1;
@@ -87,7 +87,7 @@ int HTTP_Connect(HTTPClient *client) {
 }
 
 int HTTP_Write(HTTPClient *client, char *buffer, size_t length) {
-  int result = tcp_sendAll(client->tcp_client, buffer, length, 5000);
+  int result = tcp_send(client->tcp_client, buffer, length);
 
   if (result < 0)
     printf("HTTP: Failed to send data\n");
@@ -96,7 +96,7 @@ int HTTP_Write(HTTPClient *client, char *buffer, size_t length) {
 }
 
 int HTTP_Read(HTTPClient *client) {
-  int result = tcp_recieveAll(client->tcp_client, &client->HTTP_response, 5000);
+  int result = tcp_recieve(client->tcp_client, &client->HTTP_response, 5000);
 
   if (result < 0)
     printf("HTTP: Failed to receive data\n");
