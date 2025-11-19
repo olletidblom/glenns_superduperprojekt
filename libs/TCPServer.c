@@ -25,13 +25,19 @@ ssize_t tcpserver_send(TCPServer *server, void *data, size_t len)
   return result;
 }
 
-int tcpserver_listen(TCPServer *server, int port, int backlog)
+void tcpserver_work(void* _Context, uint64_t monTime);
+
+int tcpserver_listen(TCPServer *server, int port, int backlog, TCPServer_OnConnection callback, void* context)
 {
   struct addrinfo hints;
   struct addrinfo *res = NULL;
   char port_str[10];
   int sock = -1;
   int optval = 1;
+  
+  server->onConnect = callback;
+  printf("Starting TCP server on port %d\n", port);
+  server->context = context;
   server->port = port;
   server->backlog = backlog;
 
@@ -89,6 +95,7 @@ int tcpserver_listen(TCPServer *server, int port, int backlog)
   for (int i = 0; i < server->backlog; i++)
     server->client[i].client_socket = -1;
 
+  server->task = smw_create_task(server, tcpserver_work);
   printf("Listening\n");
   return 0;
 }
@@ -111,6 +118,10 @@ int tcpserver_accept(TCPServer *server)
     if (server->client[i].client_socket < 0)
     {
       server->client[i].client_socket = sock;
+      if (server->onConnect != NULL)
+      {
+        server->onConnect(server->context, sock);
+      }
       printf("Connected on socket %d\n", server->client[i].client_socket);
       return 0;
     }
@@ -121,7 +132,16 @@ int tcpserver_accept(TCPServer *server)
   return -2;
 }
 
+void tcpserver_work(void* _Context, uint64_t monTime)
+{
+  TCPServer *server = (TCPServer *)_Context;
 
+  if (server == NULL)
+    return;
+
+  // Accept new connections
+  tcpserver_accept(server);
+}
 
 void tcpserver_disconnect(TCPServer *server, int socket)
 {

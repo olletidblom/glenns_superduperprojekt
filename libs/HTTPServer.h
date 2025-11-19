@@ -3,6 +3,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
+#include "HTTPServerConnection.h"
 #include "smw.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -34,14 +35,14 @@ typedef struct
 }HTTP_Response;
 */
 
+
 typedef struct {
   smw_task *task;
-  void (*callback)();
-  void *context;
   HTTP_Status status;
   HTTP_Method method;
   TCPServer *tcp_server;
 
+  void* context;
   int response_code;
 
   char* method_url;

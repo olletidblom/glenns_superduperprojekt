@@ -15,13 +15,12 @@ void HTTPServer_work(void *_Context, uint64_t monTime);
 
 void HTTPServer_Disconnect(HTTPServer *server);
 
+void HTTPServer_OnConnect(void* _Context, int socket);
+
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 {
-  TCPServer *tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
 
-  if (server == NULL)
-    return -1;
-
+  TCPServer* tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
   HTTP_Status status;
   HTTPServer *http_server = (HTTPServer *)malloc(sizeof(HTTPServer));
 
@@ -29,18 +28,30 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->status = http_server_initialized;
   http_server->method = method;
 
-  http_server->tcp_server = tcp_server;
 
-  tcpserver_listen(tcp_server, 8080, 10);
+  printf("Initializing TCP server\n");
+  tcpserver_listen(tcp_server, 8080, 10, HTTPServer_OnConnect, http_server);
 
   *server = http_server;
+  return 0;
 }
 
-int HTTPServer_Accept(HTTPServer *server)
-{
-  int result = tcpserver_accept(server->tcp_server);
 
-  return result;
+void HTTPServer_OnConnect(void* _Context, int socket)
+{
+  printf("HTTP Server: Connection received on socket %d\n", socket);
+  HTTPServer* server = (HTTPServer *)_Context;
+
+  if (server == NULL)
+    return;
+
+  HTTPServerConnection* connection = NULL;
+  if( HTTPServerConnection_Initialize(&connection, socket) < 0)
+  {
+    printf("Failed to initialize HTTP server connection\n");
+    return;
+  }
+
 }
 
 int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length)
@@ -77,6 +88,7 @@ int HTTPServer_ParseHeader(HTTPServer *server)
   {
     return -1;
   }
+
   if (bytesRead > 0)
   {
     // printf("Data: %s\n", buffer);
@@ -147,12 +159,12 @@ int HTTPServer_ParseHeader(HTTPServer *server)
     server->url = strdup(temp_buffer);
     if (strstr(buffer, "\r\n\r\n"))
       printf("HTTP Server: Finished parsing header: %s\n", server->url);
-    // server->onRequest(server->context);
+
   }
   return 0;
 }
 
-int HTTPServer_SendResponse(HTTPServer *server, int response_code, char *body)
+int HTTPServer_SendResponse(HTTPServer *server, char *body)
 {
   if (server == NULL)
     return -1;
@@ -161,13 +173,7 @@ int HTTPServer_SendResponse(HTTPServer *server, int response_code, char *body)
 
 
   char response[1024];
-  int length = snprintf(response, sizeof(response),
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Length: %zu\r\n"
-                        "Content-Type: application/json\r\n"
-                        "\r\n"
-                        "%s",
-                        strlen(body), body);
+  int length = snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\n" "Content-Length: %zu\r\n" "Content-Type: application/json\r\n" "\r\n" "%s", strlen(body), body);
   int result = HTTPServer_Write(server, response, length);
   return result;
 }
@@ -179,41 +185,7 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
   if (server == NULL)
     return;
 
-  switch (server->status)
-  {
-  case http_server_initialized:
-    server->status = http_server_awaiting_connection;
-    break;
-  case http_server_awaiting_connection:
-    if (HTTPServer_Accept(server) < 0)
-    {
-      break;
-    }
-    server->status = http_server_parse_header;
-    break;
-  case http_server_connection_received:
-    server->status = http_server_parse_header;
-    break;
-  case http_server_parse_header:
-    if (HTTPServer_ParseHeader(server) < 0)
-    {
-      // server->status = http_server_dispose;
-      break;
-    }
-    server->status = http_server_POST;
-    break;
-  case http_server_POST:
-    if (HTTPServer_SendResponse(server, 200, NULL) < 0)
-    {
-      break;
-    }
-    server->status = http_server_dispose;
-    break;
-  case http_server_dispose:
-    HTTPServer_Disconnect(server);
-    server->status = http_server_awaiting_connection;
-    break;
-  }
+
 }
 
 void HTTPServer_Disconnect(HTTPServer *server)

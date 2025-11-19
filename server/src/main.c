@@ -8,7 +8,7 @@ int main() {
   smw_init();
 
   HTTPServer *httpServer = NULL;
-  if (!HTTPServer_Initialize(http_POST, &httpServer)) {
+  if (HTTPServer_Initialize(http_POST, &httpServer) != 0) {
     printf("Failed to initialize HTTP server\n");
     return -1;
   }
@@ -19,8 +19,9 @@ int main() {
     smw_work(monTime);
   }
 
-  smw_dispose();
   HTTPServer_Dispose(&httpServer);
+  smw_dispose();
+  
 
   return 0;
 }
