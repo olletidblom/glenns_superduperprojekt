@@ -30,7 +30,7 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 
 
   printf("Initializing TCP server\n");
-  tcpserver_listen(tcp_server, 10180, 1000, HTTPServer_OnConnect, http_server);
+  tcpserver_listen(tcp_server, 10180, 10, HTTPServer_OnConnect, http_server);
 
   *server = http_server;
   return 0;
