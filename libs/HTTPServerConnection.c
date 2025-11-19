@@ -63,6 +63,7 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *bo
   return result;
 }
 
+void HTTPServerConnection_Dispose(HTTPServerConnection **connection);
 
 void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 {
@@ -160,12 +161,12 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     if (strstr(buffer, "\r\n\r\n")){
       printf("HTTP connection: Finished parsing header: %s SOCKET: %d\n", connection->url, connection->socket);
       HTTPServerConnection_SendResponse(connection, NULL);
-      tcpserver_disconnect(connection->socket);
+      HTTPServerConnection_Dispose(&connection);
       return;
     }
 
   }
-  tcpserver_disconnect(connection->socket);
+  HTTPServerConnection_Dispose(&connection);
   return;
   
 }
@@ -181,6 +182,7 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     smw_destroy_task(_server->task);
 
   close(_server->socket);
+  free(_server->url);
   free(_server);
   *connection = NULL;
 }
