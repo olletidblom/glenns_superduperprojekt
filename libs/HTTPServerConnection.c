@@ -84,7 +84,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
   if (bytesRead < 0)
   {
-    return -1;
+    return;
   }
 
   if (bytesRead > 0)
@@ -102,6 +102,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
       if (connection->method_url == NULL)
       {
         printf("HTTPServerConnection_TaskWork: Failed to copy method\n");
+        return;
       }
     }
 
@@ -119,6 +120,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         if (connection->url_path == NULL)
         {
           printf("HTTPServerConnection_TaskWork: Failed to copy url\n");
+          return;
         }
       }
     }
@@ -139,6 +141,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         if (connection->host == NULL)
         {
           printf("HTTPServerConnection_TaskWork: Failed to copy url\n");
+          return;
         }
       }
     }
@@ -161,7 +164,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     }
 
   }
-  return 0;
+  return;
   
 }
 
