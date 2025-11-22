@@ -1,6 +1,5 @@
 #include "../../libs/utils.h"
-#include "../../libs/HTTPServer.h"
-#include "server.h"
+#include "HTTPServer.h"
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -2,8 +2,8 @@
 #define TCP_SERVER_H
 
 #define _POSIX_C_SOURCE 200809L
-#include "TCPClient.h"
-#include "smw.h"
+#include "../../libs/TCPClient.h"
+#include "../../libs/smw.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -18,7 +18,7 @@ typedef struct {
   int server_socket;
   int backlog;
   int port;
-  TCPClient client[10];
+  TCPClient *client;
 } TCPServer;
 
 ssize_t tcpserver_recieve(TCPServer *server, void *buffer, size_t len);

@@ -9,13 +9,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+void HTTPServer_OnConnect(void* _Context, int socket);
 int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length);
 
 void HTTPServer_work(void *_Context, uint64_t monTime);
 
+void HTTPServer_RemoveConnection(HTTPServer *server, HTTPServerConnection *connection);
 void HTTPServer_Disconnect(HTTPServer *server);
 
-void HTTPServer_OnConnect(void* _Context, int socket);
 
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 {
@@ -46,7 +47,7 @@ void HTTPServer_OnConnect(void* _Context, int socket)
     return;
 
   HTTPServerConnection* connection = NULL;
-  if( HTTPServerConnection_Initialize(&connection, socket) < 0)
+  if( HTTPServerConnection_Initialize(&connection, socket, server) < 0) // added , server
   {
     printf("Failed to initialize HTTP server connection\n");
     return;
@@ -187,6 +188,17 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
 
 
 }
+
+void HTTPServer_RemoveConnection(HTTPServer *server, HTTPServerConnection *connection)
+{
+    if (server == NULL || connection == NULL)
+    return;
+
+    printf("HTTPServer: Removing connection on socket %d\n", connection->socket);
+
+    HTTPServerConnection_Dispose(&connection);
+}
+
 
 void HTTPServer_Disconnect(HTTPServer *server)
 {

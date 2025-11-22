@@ -41,6 +41,11 @@ int tcpserver_listen(TCPServer *server, int port, int backlog, TCPServer_OnConne
   server->port = port;
   server->backlog = backlog;
 
+  server->client = malloc(backlog * sizeof(TCPClient));
+  if (server->client == NULL)
+    return -4;
+  
+
   printf("PORT: %d\n", server->port);
   memset(&hints, 0, sizeof(hints));
   snprintf(port_str, sizeof(port_str), "%d", server->port);
@@ -154,6 +159,9 @@ void tcpserver_disconnect(int socket)
 void tcpserver_dispose(TCPServer *server)
 {
   close(server->server_socket);
+
+    free(server->client);
+    server->client = NULL;
 
   for (int i = 0; i < server->backlog; i++)
   {

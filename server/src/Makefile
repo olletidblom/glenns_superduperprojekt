@@ -9,8 +9,8 @@ LIB_DIR   = ../../libs
 BUILD_DIR = ../build
 
 # Source files
-SRC_FILE = main.c
-LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/TCPServer.c  $(LIB_DIR)/smw.c $(LIB_DIR)/HTTPServer.c $(LIB_DIR)/HTTPServerConnection.c
+SRC_FILES = main.c TCPServer.c HTTPServer.c HTTPServerConnection.c
+LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/smw.c
 
 # Object files
 OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o
@@ -20,6 +20,17 @@ TARGET = $(BUILD_DIR)/server_program
 
 # Default target
 all: $(BUILD_DIR) $(TARGET)
+
+# Add a debug build target
+CFLAGS_DEBUG = $(CFLAGS) -g -fsanitize=address -fno-omit-frame-pointer
+LDFLAGS_DEBUG = $(LDFLAGS) -fsanitize=address
+
+debug: CFLAGS := $(CFLAGS_DEBUG)
+debug: LDFLAGS := $(LDFLAGS_DEBUG)
+debug: clean all
+
+valgrind: all
+	valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET)
 
 # Link all object files
 $(TARGET): $(OBJ_FILES)
@@ -32,13 +43,13 @@ $(TARGET): $(OBJ_FILES)
 $(BUILD_DIR)/TCPClient.o: $(LIB_DIR)/TCPClient.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/TCPServer.o: $(LIB_DIR)/TCPServer.c | $(BUILD_DIR)
+$(BUILD_DIR)/TCPServer.o: $(SRC_DIR)/TCPServer.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/HTTPServer.o: $(LIB_DIR)/HTTPServer.c | $(BUILD_DIR)
+$(BUILD_DIR)/HTTPServer.o: $(SRC_DIR)/HTTPServer.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/HTTPServerConnection.o: $(LIB_DIR)/HTTPServerConnection.c | $(BUILD_DIR)
+$(BUILD_DIR)/HTTPServerConnection.o: $(SRC_DIR)/HTTPServerConnection.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/smw.o: $(LIB_DIR)/smw.c | $(BUILD_DIR)

@@ -9,13 +9,13 @@
 #include <stdint.h>
 
 typedef enum {
-  http_client_initialized = 0,
-  http_client_connected = 1,
-  http_client_POST = 2,
-  http_client_header = 4,
-  http_client_GET = 5,
-  http_client_parse_header = 6,
-  http_client_dispose = 7,
+  http_client_initialized,
+  http_client_connected,
+  http_client_POST,
+  http_client_header,
+  http_client_GET,
+  http_client_parse_header,
+  http_client_dispose,
 } HTTP_Status;
 
 typedef enum {

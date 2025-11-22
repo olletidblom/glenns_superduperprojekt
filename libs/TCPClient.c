@@ -42,7 +42,7 @@ int tcp_connect(TCPClient* client)
         return -1;
     }
 
-    for(struct addrinfo* temp = res; temp; temp->ai_next)
+    for(struct addrinfo* temp = res; temp; temp = temp->ai_next)
     {
         sock = socket(temp->ai_family, temp->ai_socktype, temp->ai_protocol);
 

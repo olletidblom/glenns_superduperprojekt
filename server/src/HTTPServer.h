@@ -4,7 +4,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
 #include "HTTPServerConnection.h"
-#include "smw.h"
+#include "../../libs/smw.h"
 #include <stddef.h>
 #include <stdint.h>
 

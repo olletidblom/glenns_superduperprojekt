@@ -41,6 +41,17 @@ $(BUILD_DIR)/smw.o: $(LIB_DIR)/smw.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
+# Add a debug build target
+CFLAGS_DEBUG = $(CFLAGS) -g -fsanitize=address -fno-omit-frame-pointer
+LDFLAGS_DEBUG = $(LDFLAGS) -fsanitize=address
+
+debug: CFLAGS := $(CFLAGS_DEBUG)
+debug: LDFLAGS := $(LDFLAGS_DEBUG)
+debug: clean all
+
+valgrind: all
+    valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET)
+
 
 # Create build directory if it doesn't exist
 $(BUILD_DIR):

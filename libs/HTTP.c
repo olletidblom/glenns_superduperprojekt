@@ -29,7 +29,7 @@ void strtokRepeat(char *str, int repetition) {
 int HTTP_Initialize(HTTP_Method method, HTTPClient **client) {
   TCPClient *tcp_client = (TCPClient *)malloc(sizeof(TCPClient));
 
-  tcp_init(tcp_client, "localhost", 8080);
+  tcp_init(tcp_client, "localhost", 10180);
 
   if (client == NULL || tcp_client->hostname == NULL)
     return -1;
@@ -44,6 +44,7 @@ int HTTP_Initialize(HTTP_Method method, HTTPClient **client) {
   http_client->tcp_client = tcp_client;
 
   *client = http_client;
+  return 0;
 }
 
 int HTTP_Get(HTTPClient *client) {
