@@ -40,7 +40,7 @@ int HTTP_Initialize(HTTP_Method method, HTTPClient **client) {
   http_client->task = smw_create_task(http_client, HTTP_work);
   http_client->status = http_client_initialized;
   http_client->method = method;
-
+  
   http_client->tcp_client = tcp_client;
 
   *client = http_client;

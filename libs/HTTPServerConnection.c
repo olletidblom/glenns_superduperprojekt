@@ -1,4 +1,5 @@
 #include "HTTPServerConnection.h"
+#include "CURL.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -9,59 +10,61 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
-int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_t length)
-{
-  int result = recv(connection->socket, buffer, length, MSG_DONTWAIT);
-  // printf("send error %d: %s\n", errno, strerror(errno));
-  return result;
-}
-
-int HTTPConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length)
-{
-  ssize_t result = send(connection->socket, buffer, length, MSG_NOSIGNAL);
-  // printf("send error %d: %s\n", errno, strerror(errno));
-  // scanf("%d", result);
-  return result;
-}
-
 int HTTPServerConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length);
 
 void HTTPServerConnection_work(void *_Context, uint64_t monTime);
 
 void HTTPServerConnection_Disconnect(HTTPServerConnection *connection);
 
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket)
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, Request _HandleRequest, ProcessRequest _ProcessRequest, SendRequest _SendRequest)
 {
   if (connection == NULL)
     return -1;
 
-
   HTTPServerConnection *_Connection = (HTTPServerConnection *)malloc(sizeof(HTTPServerConnection));
+  _Connection->buffer_capacity = 8192;
+  _Connection->buffer_length = 0;
+  _Connection->buffer = (uint8_t *)malloc(_Connection->buffer_capacity);
 
   _Connection->socket = socket;
 
-  _Connection->task = smw_create_task(_Connection, HTTPServerConnection_work);
+  _Connection->handle_request = _HandleRequest;
+  _Connection->process_request = _ProcessRequest;
+  _Connection->send_request = _SendRequest;
 
+  _Connection->state = state_initialized;
+  _Connection->task = smw_create_task(_Connection, HTTPServerConnection_work);
 
   *connection = _Connection;
   return 0;
 }
 
-
-int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *body)
+int HTTPServerConnection_SendResponse(HTTPServerConnection *connection)
 {
   if (connection == NULL)
     return -1;
 
-  body = "Göteborg kraschar ALDRIG!";
+  if(connection->response == NULL)
+  return -2;
 
 
-  char response[1024];
-  int length = snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\n" "Content-Length: %zu\r\n" "Content-Type: application/json\r\n" "\r\n" "%s", strlen(body), body);
-  int result = HTTPConnection_Write(connection, response, length);
+  size_t header = 1024;
+  size_t total_size = header + connection->response_size + 1;
+
+  char *response = (char *)malloc(total_size);
+
+  int length = snprintf(response, total_size, "HTTP/1.1 200 OK\r\n"
+                                              "Content-Length: %zu\r\n"
+                                              "Content-Type: application/json\r\n"
+                                              "\r\n"
+                                              "%s",
+                        connection->response_size, connection->response);
+  int result = tcpserver_send(connection->socket, response, length);
+  free(response);
+  printf("hellooooo\n");
   return result;
 }
+
 
 void HTTPServerConnection_Dispose(HTTPServerConnection **connection);
 
@@ -72,104 +75,65 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
   if (connection == NULL)
     return;
 
-
-  connection->method_url = NULL;
-  connection->url = NULL;
-  connection->host = NULL;
-  connection->url_path = NULL;
-
-  char buffer[1024];
-
-  int bytesRead = HTTPConnection_Read(connection, (uint8_t *)buffer, sizeof(buffer));
-
-  if (bytesRead < 0)
+  switch (connection->state)
   {
+  case state_initialized:
+    ssize_t bytesRead = tcpserver_recieve(connection->socket, connection->buffer + connection->buffer_length, connection->buffer_capacity - connection->buffer_length - 1);
+
+    if (bytesRead <= 0)
+      break;
+
+    connection->buffer_length += bytesRead;
+
+    connection->state = state_parsing;
+    break;
+  case state_parsing:
+    if (connection->handle_request(connection) != 0)
+    {
+      connection->state = state_dispose;
+      break;
+    }
+    else
+    {
+      connection->state = state_processing;
+      break;
+    }
+  case state_processing:
+    if (connection->process_request(connection) != 0)
+    {
+      connection->state = state_dispose;
+      break;
+    }
+    else
+    {
+      connection->state = state_send_request;
+      break;
+    }
+  case state_send_request:
+    if (connection->send_request(connection) != 0)
+    {
+      connection->state = state_dispose;
+      break;
+    }
+    else
+    {
+      connection->state = state_send_response;
+      break;
+    }
+  case state_send_response:
+    HTTPServerConnection_SendResponse(connection);
+    connection->state = state_dispose;
+    break;
+  case state_dispose:
+    HTTPServerConnection_Dispose(&connection);
     return;
+  default:
+    break;
   }
 
-  if (bytesRead > 0)
-  {
-    // printf("Data: %s\n", buffer);
-    buffer[bytesRead] = '\0';
-    char *ptr = &buffer[0];
-    char *method = strchr(ptr, ' ');
-    if (method != NULL)
-    {
-      int method_length = method - ptr;
-
-      connection->method_url = strndup(ptr, method_length);
-
-      if (connection->method_url == NULL)
-      {
-        printf("HTTPServerConnection_TaskWork: Failed to copy method\n");
-        return;
-      }
-    }
-
-    char *url_path = strchr(ptr, '/');
-
-    if (url_path != NULL)
-    {
-      char *url_end = strchr(url_path, ' ');
-
-      if (url_end != NULL)
-      {
-        int url_length = url_end - url_path;
-
-        connection->url_path = strndup(url_path, url_length);
-        if (connection->url_path == NULL)
-        {
-          printf("HTTPServerConnection_TaskWork: Failed to copy url\n");
-          return;
-        }
-      }
-    }
-
-    char *host = strstr(ptr, "Host: ");
-    if (host != NULL)
-    {
-      host += strlen("Host: ");
-
-      char *eol = strstr(host, "\r\n");
-
-      if (eol != NULL)
-      {
-        int url_length = eol - host;
-
-        connection->host = strndup(host, url_length);
-
-        if (connection->host == NULL)
-        {
-          printf("HTTPServerConnection_TaskWork: Failed to copy url\n");
-          return;
-        }
-      }
-    }
-  }
-
-  if (connection->method_url != NULL && connection->host != NULL && ((strcmp(connection->method_url, "POST") == 0) || (strcmp(connection->method_url, "GET") == 0)))
-  {
-    char temp_buffer[1024];
-
-    snprintf(temp_buffer, sizeof(temp_buffer), "http://%s%s", connection->host, connection->url_path);
-    // printf("Temp URL: %s\n", temp_buffer);
-    free(connection->url_path);
-    free(connection->host);
-    free(connection->method_url);
-
-    connection->url = strdup(temp_buffer);
-    if (strstr(buffer, "\r\n\r\n")){
-      printf("HTTP connection: Finished parsing header: %s SOCKET: %d\n", connection->url, connection->socket);
-      HTTPServerConnection_SendResponse(connection, NULL);
-      HTTPServerConnection_Dispose(&connection);
-      return;
-    }
-
-  }
-  HTTPServerConnection_Dispose(&connection);
   return;
-  
 }
+
 
 void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
 {
@@ -182,6 +146,9 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     smw_destroy_task(_server->task);
 
   close(_server->socket);
+  free(_server->buffer);
+  free(_server->request);
+  free(_server->response);
   free(_server->url);
   free(_server);
   *connection = NULL;

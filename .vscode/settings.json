@@ -1,5 +1,9 @@
 {
     "files.associations": {
-        "http.h": "c"
+        "http.h": "c",
+        "httpserverconnection.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "stdint.h": "c"
     }
 }

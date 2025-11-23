@@ -8,6 +8,8 @@
 #include <stdint.h>
 
 
+typedef struct HTTPServerConnection HTTPServerConnection;
+
 /*
 typedef struct
 {
@@ -15,23 +17,46 @@ typedef struct
 }HTTP_Response;
 */
 
+typedef enum {
+  state_initialized = 0,
+  state_parsing = 1,
+  state_processing = 2,
+  state_send_request = 3,
+  state_send_response = 4,
+  state_dispose = 5
+} HTTPState;
 
+typedef int (*Request)(void* _Context);
+typedef int (*ProcessRequest)(void* _Context);
+typedef int (*SendRequest)(void* _Context);
 
-typedef struct {
+struct HTTPServerConnection{
   smw_task *task;
 
-  void *context;
+  Request handle_request;
+  ProcessRequest process_request;
+  SendRequest send_request;
+
+
+  HTTPState state;
 
   int socket;
 
-  
-  char* method_url;
-	char* host;
-	char* url_path;
-	char* url;
-} HTTPServerConnection;
+  uint8_t* buffer;
+  size_t buffer_length;
+  size_t buffer_capacity;
 
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket);
+  char* response;
+  size_t response_size;
+  char* request;
+	char* url;
+};
+
+
+
+
+
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, Request _HandleRequest, ProcessRequest _ProcessRequest, SendRequest _SendRequest);
 
 
 

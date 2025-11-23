@@ -1,7 +1,7 @@
 # Compiler settings
 CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -I../../libs
-LDFLAGS = 
+CFLAGS  = -Wall -Wextra -std=c11 -I../../libs 
+LDFLAGS = -lcurl
 
 # Directories
 SRC_DIR   = .
@@ -10,10 +10,10 @@ BUILD_DIR = ../build
 
 # Source files
 SRC_FILE = main.c
-LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/TCPServer.c  $(LIB_DIR)/smw.c $(LIB_DIR)/HTTPServer.c $(LIB_DIR)/HTTPServerConnection.c
+LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/TCPServer.c  $(LIB_DIR)/smw.c $(LIB_DIR)/HTTPServer.c $(LIB_DIR)/HTTPServerConnection.c $(LIB_DIR)/Request.c $(LIB_DIR)/API/API.c $(LIB_DIR)/API/Parser.c $(LIB_DIR)CURL.c
 
 # Object files
-OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o
+OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o $(BUILD_DIR)/Request.o $(BUILD_DIR)/API.o $(BUILD_DIR)/Parser.o $(BUILD_DIR)/CURL.o
 
 # Output binary
 TARGET = $(BUILD_DIR)/server_program
@@ -39,6 +39,18 @@ $(BUILD_DIR)/HTTPServer.o: $(LIB_DIR)/HTTPServer.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/HTTPServerConnection.o: $(LIB_DIR)/HTTPServerConnection.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/Request.o: $(LIB_DIR)/Request.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/API.o: $(LIB_DIR)/API/API.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/Parser.o: $(LIB_DIR)/API/Parser.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/CURL.o: $(LIB_DIR)/CURL.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/smw.o: $(LIB_DIR)/smw.c | $(BUILD_DIR)

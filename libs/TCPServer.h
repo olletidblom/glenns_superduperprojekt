@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <unistd.h>
+
 
 
 typedef void (*TCPServer_OnConnection)(void* context, int socket);
@@ -21,9 +23,9 @@ typedef struct {
   TCPClient client[10];
 } TCPServer;
 
-ssize_t tcpserver_recieve(TCPServer *server, void *buffer, size_t len);
+ssize_t tcpserver_recieve(int socket, void *buffer, size_t len);
 
-ssize_t tcpserver_send(TCPServer *server, void *data, size_t len);
+ssize_t tcpserver_send(int socket, void *data, size_t len);
 
 int tcpserver_listen(TCPServer *server, int port, int backlog, TCPServer_OnConnection callback, void* context);
 

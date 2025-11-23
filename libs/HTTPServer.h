@@ -4,18 +4,16 @@
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
 #include "HTTPServerConnection.h"
+#include "Request.h"
+#include "API/API.h"
+#include "CURL.h"
 #include "smw.h"
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum {
-  http_server_initialized = 0,
-  http_server_awaiting_connection = 1,
-  http_server_connection_received = 2,
-  http_server_parse_header = 3,
-  http_server_POST = 4,
-  http_server_dispose = 5,
-} HTTP_Status;
+
+
+
 
 typedef enum {
   http_failed_to_connect = 1,
@@ -38,10 +36,11 @@ typedef struct
 
 typedef struct {
   smw_task *task;
-  HTTP_Status status;
   HTTP_Method method;
   TCPServer *tcp_server;
 
+
+  HTTPServerConnection* connection;
   void* context;
   int response_code;
 
