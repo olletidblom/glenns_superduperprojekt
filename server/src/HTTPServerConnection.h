@@ -3,10 +3,12 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
+#include "Handlers/weather_handler.h"
 #include "../../libs/smw.h"
 #include <stddef.h>
 #include <stdint.h>
 
+typedef HTTPServerConnection HTTPServerConnection;
 
 /*
 typedef struct
@@ -22,7 +24,7 @@ typedef enum {
 } HTTPServerConnection_State;
 
 
-typedef struct {
+struct HTTPServerConnection {
   smw_task *task;
 
   void *context;
@@ -36,6 +38,10 @@ typedef struct {
 	char* url_path;
 	char* url;
 
+    Route* routes;
+    size_t route_count;
+    size_t max_routes;
+
     char recv_buffer[2048];
     size_t recv_buffer_length;
     int content_length;
@@ -46,7 +52,7 @@ typedef struct {
     char* response_body;
     int status_code;
 
-} HTTPServerConnection;
+};
 
 int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void* server_context);
 

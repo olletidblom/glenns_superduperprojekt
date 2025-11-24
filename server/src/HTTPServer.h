@@ -3,7 +3,6 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
-#include "Handlers/handler.h"
 #include "HTTPServerConnection.h"
 #include "../../libs/smw.h"
 #include <stddef.h>
@@ -41,10 +40,6 @@ typedef struct {
   HTTP_Method method;
   TCPServer *tcp_server;
 
-  Route* routes;
-    size_t route_count;
-    size_t max_routes;
-
   void* context;
   int response_code;
 
@@ -56,14 +51,10 @@ typedef struct {
 } HTTPServer;
 
 
-RequestHandler HTTPServer_FindHandler(HTTPServer* server, const char* method, const char* path);
-
 
 
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server);
 
-void HTTPServer_RegisterRoute(HTTPServer* server, const char* method, 
-                              const char* path, RequestHandler handler);
 
 void HTTPServer_Dispose(HTTPServer **server);
 #endif

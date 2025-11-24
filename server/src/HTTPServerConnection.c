@@ -1,6 +1,6 @@
 #include "HTTPServerConnection.h"
 #include "HTTPServer.h"
-#include "Handlers/handler.h"
+#include "Handlers/HTTPServerHandler.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -10,68 +10,69 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <limits.h>  //for INT_MAX at content-length check
+#include <limits.h> //for INT_MAX at content-length check
 
 // Type alias for handler function pointer
-typedef char* (*HandlerFunc)(HTTPServerConnection*);
+typedef char *(*HandlerFunc)(HTTPServerConnection *);
 
 // Forward declaration
-void HTTPServer_RemoveConnection(void* server, HTTPServerConnection *connection);
+void HTTPServer_RemoveConnection(void *server, HTTPServerConnection *connection);
 
 int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_t length);
 int HTTPServerConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length);
 
-
 void HTTPServerConnection_work(void *_Context, uint64_t monTime);
-
 
 void HTTPServerConnection_Cleanup(HTTPServerConnection *connection);
 void HTTPServerConnection_Disconnect(HTTPServerConnection *connection);
 
-
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void* server_context)
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context)
 {
 
-  if (connection == NULL)
-    return -1;
-    
-  HTTPServerConnection *_Connection = (HTTPServerConnection *)malloc(sizeof(HTTPServerConnection));
+    if (connection == NULL)
+        return -1;
 
-  _Connection->socket = socket;
-  _Connection->method_url = NULL;
-  _Connection->url = NULL;
-  _Connection->host = NULL;
-  _Connection->url_path = NULL;
-  _Connection->context = server_context;
-  
-  _Connection->content_length = 0;
-  _Connection->recv_buffer_length = 0;
-  _Connection->recv_buffer[0] = '\0';
-  
-  _Connection->request_body = NULL;
-  
-  _Connection->handler = NULL;
-  _Connection->response_body = NULL;
-  _Connection->status_code = 200;
-  
-  _Connection->state = HTTPServerConnection_State_Read_Make_URL;
-  _Connection->task = smw_create_task(_Connection, HTTPServerConnection_work);
-  *connection = _Connection;
-  return 0;
+    HTTPServerConnection *_Connection = (HTTPServerConnection *)malloc(sizeof(HTTPServerConnection));
+
+    _Connection->socket = socket;
+    _Connection->method_url = NULL;
+    _Connection->url = NULL;
+    _Connection->host = NULL;
+    _Connection->url_path = NULL;
+    _Connection->context = server_context;
+
+    _Connection->route_count = 0;
+    _Connection->max_routes = 10;
+    _Connection->routes = (Route *)malloc(sizeof(Route) * _Connection->max_routes);
+
+    _Connection->content_length = 0;
+    _Connection->recv_buffer_length = 0;
+    _Connection->recv_buffer[0] = '\0';
+
+    _Connection->request_body = NULL;
+
+    _Connection->handler = NULL;
+    _Connection->response_body = NULL;
+    _Connection->status_code = 200;
+
+    _Connection->state = HTTPServerConnection_State_Read_Make_URL;
+    _Connection->task = smw_create_task(_Connection, HTTPServerConnection_work);
+    *connection = _Connection;
+    return 0;
 }
 
 int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_t length)
 {
-  // printf("send error %d: %s\n", errno, strerror(errno));
-  return recv(connection->socket, buffer, length, MSG_DONTWAIT);
+    // printf("send error %d: %s\n", errno, strerror(errno));
+    return recv(connection->socket, buffer, length, MSG_DONTWAIT);
 }
 
 int HTTPConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length)
 {
-  ssize_t result = send(connection->socket, buffer, length, MSG_NOSIGNAL);
-  // printf("send error %d: %s\n", errno, strerror(errno));
-  // scanf("%d", result);
-  return result;
+    ssize_t result = send(connection->socket, buffer, length, MSG_NOSIGNAL);
+    // printf("send error %d: %s\n", errno, strerror(errno));
+    // scanf("%d", result);
+    return result;
 }
 
 // Returns: 0 on success, -1 on error, 1 if needs more data
@@ -81,16 +82,16 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
         return -1;
 
     if (connection->recv_buffer_length < 18)
-        return 1;  // Need more data
-    
+        return 1; // Need more data
+
     if (connection->recv_buffer_length > 1024)
     {
         printf("HTTPServerConnection_ParseHeader: Headers too large (>1024 bytes)\n");
         return -1;
     }
-    
-    if (strstr(connection->recv_buffer, "\r\n\r\n") == NULL)  //if headers not complete
-        return 1;  // Need more data
+
+    if (strstr(connection->recv_buffer, "\r\n\r\n") == NULL) // if headers not complete
+        return 1;                                            // Need more data
 
     // Validate HTTP line endings - reject requests with bare LF
     char *check_ptr = connection->recv_buffer;
@@ -127,7 +128,7 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     char *path_start = strchr(connection->recv_buffer, ' ');
     if (path_start == NULL)
         return -1;
-    
+
     path_start++;
     char *path_end = strchr(path_start, ' ');
     if (path_end == NULL)
@@ -136,6 +137,7 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     connection->url_path = strndup(path_start, path_end - path_start);
     if (connection->url_path == NULL)
     {
+        free(connection->method_url);
         printf("HTTPServerConnection_ParseHeader: Failed to copy url\n");
         return -1;
     }
@@ -151,75 +153,65 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
             connection->host = strndup(host, eol - host);
             if (connection->host == NULL)
             {
+                free(connection->url_path);
+                free(connection->method_url);
                 printf("HTTPServerConnection_ParseHeader: Failed to copy host\n");
                 return -1;
             }
         }
     }
 
-    // Parse Content-Length
-    char *content_length_str = strstr(connection->recv_buffer, "Content-Length: ");
-    if (content_length_str != NULL)
+    if (connection->host != NULL && connection->url_path != NULL && connection->method_url != NULL)
     {
-        content_length_str += 16;
-        char *endptr;
-        long val = strtol(content_length_str, &endptr, 10);
-
-        if (endptr == content_length_str)
-        {
-            printf("HTTPServerConnection_ParseHeader: Invalid Content-Length value\n");
-            return -1;
-        }
-
-        if (val < 0 || val > INT_MAX)
-        {
-            printf("HTTPServerConnection_ParseHeader: Content-Length out of range\n");
-            return -1;
-        }
-        
-        connection->content_length = (int)val;
-    }
-    else
-    {
-        connection->content_length = 0;
+        char temp_buffer[2048];
+        snprintf(temp_buffer, sizeof(temp_buffer), "http://%s%s", connection->host, connection->url_path);
+        connection->url = strdup(temp_buffer);
+        printf("Built URL: %s\n", connection->url);
+        return 0;
     }
 
-    printf("HTTP: %s %s HOST: %s Content-length: %d SOCKET: %d\n",
-        connection->method_url,
-        connection->url_path,
-        connection->host ? connection->host : "(null)",
-        connection->content_length,
-        connection->socket);
-
-    return 0;
+    free(connection->method_url);
+    free(connection->url_path);
+    return -1;
 }
 
-
 // Returns: 0 on success, -1 on error
-int HTTPServerConnection_BuildURL(HTTPServerConnection *connection)
+
+void HTTPServer_RegisterRoute(HTTPServerConnection *server, const char *method, const char *path, RequestHandler handler)
 {
-    if (connection == NULL || connection->method_url == NULL || connection->url_path == NULL)
+    if (server == NULL || method == NULL || path == NULL || handler == NULL)
+        return;
+
+    if (server->route_count >= server->max_routes)
     {
-        printf("BuildURL: Missing method or url_path\n");
-        return -1;
+        server->max_routes *= 2;
+        server->routes = realloc(server->routes, sizeof(Route) * server->max_routes);
     }
 
-    if (connection->host != NULL)
+    Route *route = &server->routes[server->route_count];
+    route->method = strdup(method);
+    route->path = strdup(path);
+    route->handler = handler;
+    server->route_count++;
+
+    printf("Registered: %s %s (total:%zu/%zu)", method, path, server->route_count, server->max_routes);
+}
+
+RequestHandler HTTPServer_FindHandler(HTTPServerConnection *server, const char *method, const char *path)
+{
+    if (server == NULL || method == NULL || path == NULL)
+        return NULL;
+
+    for (size_t i = 0; i < server->route_count; i++)
     {
-        char temp_buffer[1024];
-        snprintf(temp_buffer, sizeof(temp_buffer), "http://%s%s", connection->host, connection->url_path);
-        
-        connection->url = strdup(temp_buffer);
-        
-        if (connection->url == NULL)
+        if (strcmp(server->routes[i].method, method) == 0 && strcmp(server->routes[i].path, path) == 0)
         {
-            printf("BuildURL: failed to allocate URL\n");
-            return -1;
+            printf("found handler for %s %s\n", method, path);
+            return server->routes[i].handler;
         }
     }
-    
-    printf("Route %s %s\n", connection->method_url, connection->url_path);
-    return 0;
+    printf("No handler found for %s %s\n", method, path);
+    return NULL; // fix to set status code to 404
 }
 
 // Returns: 0 on success, -1 on error
@@ -256,61 +248,67 @@ int HTTPServerConnection_HandleRequest(HTTPServerConnection *connection)
     return 0;
 }
 
-int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *body)
+int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *body)
 {
-  if (connection == NULL)
-    return -1;
+    if (connection == NULL)
+        return -1;
 
-  if (connection->response_body != NULL) {
-      body = connection->response_body;
-  }
-  else if (connection->request_body != NULL) {
-      body = connection->request_body;
-  } else {
-      body = "{\"message\":\"No response\"}";
-  }
+    if (connection->response_body != NULL)
+    {
+        body = connection->response_body;
+    }
+    else if (connection->request_body != NULL)
+    {
+        body = connection->request_body;
+    }
+    else
+    {
+        body = "{\"message\":\"No response\"}";
+    }
 
-  const char* status_text;
-  switch (connection->status_code)
-  {
+    const char *status_text;
+    switch (connection->status_code)
+    {
     case 200:
-        status_text = "200 OK"; break;
+        status_text = "200 OK";
+        break;
     case 404:
-        status_text = "404 Not Found"; break;
+        status_text = "404 Not Found";
+        break;
     case 500:
-        status_text = "500 Internal Server Error"; break;
+        status_text = "500 Internal Server Error";
+        break;
     default:
-        status_text = "Unknown"; break;
-  }
+        status_text = "Unknown";
+        break;
+    }
 
+    char response[1024];
+    int length = snprintf(response, sizeof(response),
+                          "HTTP/1.1 %d %s\r\n"
+                          "Content-Length: %zu\r\n"
+                          "Content-Type: application/json\r\n"
+                          "\r\n"
+                          "%s",
+                          connection->status_code, status_text, strlen(body), body);
 
-  char response[1024];
-  int length = snprintf(response, sizeof(response),
-        "HTTP/1.1 %d %s\r\n"
-        "Content-Length: %zu\r\n"
-        "Content-Type: application/json\r\n"
-        "\r\n"
-        "%s",
-        connection->status_code, status_text, strlen(body), body);
-
-  int result = HTTPConnection_Write(connection, response, length);
-  return result;
+    int result = HTTPConnection_Write(connection, response, length);
+    return result;
 }
-
 
 void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 {
 
-  HTTPServerConnection *connection = (HTTPServerConnection *)_Context;
-  if (connection == NULL)
-    return;
+    HTTPServerConnection *connection = (HTTPServerConnection *)_Context;
+    if (connection == NULL)
+        return;
 
-  switch (connection->state)
-  {
+    switch (connection->state)
+    {
     case HTTPServerConnection_State_Read_Make_URL:
     {
         int bytesRead = HTTPConnection_Read(connection, (uint8_t *)(connection->recv_buffer + connection->recv_buffer_length),
-                                                            sizeof(connection->recv_buffer) - connection->recv_buffer_length - 1);
+                                            sizeof(connection->recv_buffer) - connection->recv_buffer_length - 1);
 
         if (bytesRead < 0)
         {
@@ -331,7 +329,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
             int parse_result = HTTPServerConnection_ParseHeader(connection);
             if (parse_result == 1)
             {
-                return;  // Need more header data
+                return; // Need more header data
             }
             else if (parse_result < 0)
             {
@@ -339,47 +337,22 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
                 return;
             }
         }
-    
+
+
+
+        HTTPServerHandler_ParseInputParameters(connection->url);
         // Check if we need to read body (happens every time we read more data)
-        if (connection->content_length > 0)
-        {
-            // Find where headers end
-            char* body_start = strstr(connection->recv_buffer, "\r\n\r\n");
-            if (body_start != NULL)
-            {
-                body_start += 4;  // Skip past \r\n\r\n
-                size_t header_size = body_start - connection->recv_buffer;
-                size_t body_in_buffer = connection->recv_buffer_length - header_size;
-                
-                if (body_in_buffer >= connection->content_length)
-                {
-                    // Complete body received
-                    connection->request_body = strndup(body_start, connection->content_length);
-                    printf("Body received (%d bytes): %.*s\n", connection->content_length, 
-                           connection->content_length < 100 ? connection->content_length : 100, // limit print size
-                           connection->request_body);    
 
-                } else
-                {
-                    // Need more body data - stay in this state, will read more next call
-                    printf("Body partial: %zu/%d bytes (need %d more)\n", 
-                           body_in_buffer, connection->content_length, 
-                           connection->content_length - (int)body_in_buffer);
-                    return;
-                }
-            }
-        }
         // No body expected - build URL and move to handlers
-        if (HTTPServerConnection_BuildURL(connection) < 0)
-        {
-            connection->state = HTTPServerConnection_State_Cleanup;
-            return;
-        }
 
-        HTTPServer* server = (HTTPServer*)connection->context;
-        connection->handler = HTTPServer_FindHandler(server,
-                                                    connection->method_url,
-                                                    connection->url_path);
+        //HTTPServer_RegisterRoute(connection, "GET", "/", Handle_Weather);
+        HTTPServer_RegisterRoute(connection, "GET", "/api/v1/gwd?lat=5.1232&lon=5.32132", Handle_Weather);
+        //HTTPServer_RegisterRoute(connection, "GET", "/users", Handle_UsersGET);
+        //HTTPServer_RegisterRoute(connection, "POST", "/users", Handle_UsersPOST);
+
+        connection->handler = HTTPServer_FindHandler(connection,
+                                                     connection->method_url,
+                                                     connection->url_path);
 
         if (connection->handler == NULL)
         {
@@ -388,9 +361,8 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         }
 
         connection->state = HTTPServerConnection_State_Handlers;
-        
-    } break;
-
+    }
+    break;
 
     case HTTPServerConnection_State_Handlers:
     {
@@ -398,32 +370,35 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         {
             HandlerFunc handler = (HandlerFunc)connection->handler;
             connection->response_body = handler(connection);
-            printf("Handler executed for %s %s\n", connection->method_url, connection->url_path);        
-        } else {
+            printf("Handler executed for %s %s\n", connection->method_url, connection->url_path);
+        }
+        else
+        {
             connection->status_code = 404;
             connection->response_body = strdup("{\"error\":\"Not Found\"}");
         }
 
         connection->state = HTTPServerConnection_State_Response;
-        
-    } break;
-
+    }
+    break;
 
     case HTTPServerConnection_State_Response:
     {
         HTTPServerConnection_SendResponse(connection, NULL);
         printf("Response: Sent response on socket %d\n", connection->socket);
         connection->state = HTTPServerConnection_State_Cleanup;
-
-    } break;
-
+    }
+    break;
 
     case HTTPServerConnection_State_Cleanup:
     {
         HTTPServerConnection_Cleanup(connection);
-    } break;
-  }
+    }
+    break;
+    }
 }
+
+
 
 void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
 {
@@ -470,18 +445,23 @@ void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
         connection->task = NULL;
     }
 }
-                    //Let the work function finish the dispose
+
+// Let the work function finish the dispose
 void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
 {
-  if (connection == NULL || *connection == NULL)
-    return;
+    if (connection == NULL || *connection == NULL)
+        return;
 
-  HTTPServerConnection *_server = *connection;
+    HTTPServerConnection *_server = *connection;
 
-  if (_server->task != NULL)
-    smw_destroy_task(_server->task);
+    if (_server->task != NULL)
+        smw_destroy_task(_server->task);
 
-  close(_server->socket);
-  free(_server);
-  *connection = NULL;
+    close(_server->socket);
+    free(_server->host);
+    free(_server->method_url);
+    free(_server->url_path);
+    free(_server->url);
+    free(_server);
+    *connection = NULL;
 }

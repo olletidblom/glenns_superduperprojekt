@@ -9,11 +9,11 @@ LIB_DIR   = ../../libs
 BUILD_DIR = ../build
 
 # Source files
-SRC_FILES = main.c TCPServer.c HTTPServer.c HTTPServerConnection.c Handlers/weather_handler.c
+SRC_FILES = main.c TCPServer.c HTTPServer.c HTTPServerConnection.c Handlers/weather_handler.c Handlers/HTTPServerHandler.c
 LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/smw.c
 
 # Object files
-OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o $(BUILD_DIR)/weather_handler.o
+OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o $(BUILD_DIR)/weather_handler.o $(BUILD_DIR)/HTTPServerHandler.o
 
 # Output binary
 TARGET = $(BUILD_DIR)/server_program
@@ -59,6 +59,9 @@ $(BUILD_DIR)/main.o: $(SRC_DIR)/main.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/weather_handler.o: $(SRC_DIR)/Handlers/weather_handler.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/HTTPServerHandler.o: $(SRC_DIR)/Handlers/HTTPServerHandler.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Create build directory if it doesn't exist
