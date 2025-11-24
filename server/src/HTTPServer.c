@@ -21,8 +21,8 @@ void HTTPServer_Disconnect(HTTPServer *server);
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 {
 
-  TCPServer* tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
   HTTP_Status status;
+  TCPServer* tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
   HTTPServer *http_server = (HTTPServer *)malloc(sizeof(HTTPServer));
 
   http_server->task = smw_create_task(http_server, HTTPServer_work);
@@ -30,12 +30,18 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->method = method;
 
 
+  //initialize routes
+  http_server->route_count = 0;
+  http_server->max_routes = 10;
+  http_server->routes = (Route *)malloc(sizeof(Route) * http_server->max_routes);  //array of Route structs
+
   printf("Initializing TCP server\n");
   tcpserver_listen(tcp_server, 10180, 1000, HTTPServer_OnConnect, http_server);
 
   *server = http_server;
   return 0;
 }
+
 
 
 void HTTPServer_OnConnect(void* _Context, int socket)
@@ -178,6 +184,44 @@ int HTTPServer_SendResponse(HTTPServer *server, char *body)
   int result = HTTPServer_Write(server, response, length);
   return result;
 }
+
+void HTTPServer_RegisterRoute(HTTPServer* server, const char* method, const char* path, RequestHandler handler)
+{
+    if (server == NULL || method == NULL || path == NULL || handler == NULL)
+        return;
+
+    if (server->route_count >= server->max_routes)
+    {
+        server->max_routes *= 2;
+        server->routes = realloc(server->routes, sizeof(Route) * server->max_routes);
+    }
+
+    Route* route = &server->routes[server->route_count];
+    route->method = strdup(method);
+    route->path = strdup(path);
+    route->handler = handler;
+    server->route_count++;
+
+    printf("Registered: %s %s (total:%zu/%zu)", method, path, server->route_count, server->max_routes);
+}
+
+RequestHandler HTTPServer_FindHandler(HTTPServer* server, const char* method, const char* path)
+{
+    if (server ==NULL || method == NULL || path == NULL)
+        return NULL;
+
+    for (size_t i = 0; i < server->route_count; i++)
+    {
+        if (strcmp(server->routes[i].method, method) == 0 && strcmp(server->routes[i].path, path) == 0)
+        {
+            printf("found handler for %s %s\n", method, path);
+            return server->routes[i].handler;
+        }
+    }
+    printf("No handler found for %s %s\n", method, path);
+    return NULL;  // fix to set status code to 404
+}
+
 
 void HTTPServer_work(void *_Context, uint64_t monTime)
 {

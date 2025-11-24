@@ -15,8 +15,7 @@ typedef struct
 }HTTP_Response;
 */
 typedef enum {
-  HTTPServerConnection_State_Read_header,
-  HTTPServerConnection_State_Route,
+  HTTPServerConnection_State_Read_Make_URL,
   HTTPServerConnection_State_Handlers,
   HTTPServerConnection_State_Response,
   HTTPServerConnection_State_Cleanup,
@@ -37,15 +36,24 @@ typedef struct {
 	char* url_path;
 	char* url;
 
-    char recv_buffer[4096];
+    char recv_buffer[2048];
     size_t recv_buffer_length;
     int content_length;
+    
+    char* request_body;  // POST/PUT body data
+
+    void* handler;       // Function pointer (void* to avoid circular dependency)
+    char* response_body;
+    int status_code;
 
 } HTTPServerConnection;
 
 int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void* server_context);
 
-
+int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection);
+int HTTPServerConnection_BuildURL(HTTPServerConnection *connection);
+int HTTPServerConnection_HandleRequest(HTTPServerConnection *connection);
+int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *body);
 
 void HTTPServerConnection_Dispose(HTTPServerConnection **server);
 #endif
