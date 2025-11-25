@@ -1,6 +1,4 @@
 #include "HTTPServerConnection.h"
-#include "HTTPServer.h"
-#include "Handlers/HTTPServerHandler.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -40,10 +38,6 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
     _Connection->host = NULL;
     _Connection->url_path = NULL;
     _Connection->context = server_context;
-
-    _Connection->route_count = 0;
-    _Connection->max_routes = 10;
-    _Connection->routes = (Route *)malloc(sizeof(Route) * _Connection->max_routes);
 
     _Connection->content_length = 0;
     _Connection->recv_buffer_length = 0;
@@ -175,77 +169,14 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     return -1;
 }
 
-// Returns: 0 on success, -1 on error
-
-void HTTPServer_RegisterRoute(HTTPServerConnection *server, const char *method, const char *path, RequestHandler handler)
+void HTTPServerConnection_SetCallback(HTTPServerConnection* connection, void* _Context, void (*callback)(HTTPServerConnection* _Connection))
 {
-    if (server == NULL || method == NULL || path == NULL || handler == NULL)
+    if (connection == NULL || callback == NULL)
         return;
 
-    if (server->route_count >= server->max_routes)
-    {
-        server->max_routes *= 2;
-        server->routes = realloc(server->routes, sizeof(Route) * server->max_routes);
-    }
-
-    Route *route = &server->routes[server->route_count];
-    route->method = strdup(method);
-    route->path = strdup(path);
-    route->handler = handler;
-    server->route_count++;
-
-    printf("Registered: %s %s (total:%zu/%zu)", method, path, server->route_count, server->max_routes);
-}
-
-RequestHandler HTTPServer_FindHandler(HTTPServerConnection *server, const char *method, const char *path)
-{
-    if (server == NULL || method == NULL || path == NULL)
-        return NULL;
-
-    for (size_t i = 0; i < server->route_count; i++)
-    {
-        if (strcmp(server->routes[i].method, method) == 0 && strcmp(server->routes[i].path, path) == 0)
-        {
-            printf("found handler for %s %s\n", method, path);
-            return server->routes[i].handler;
-        }
-    }
-    printf("No handler found for %s %s\n", method, path);
-    return NULL; // fix to set status code to 404
-}
-
-// Returns: 0 on success, -1 on error
-int HTTPServerConnection_HandleRequest(HTTPServerConnection *connection)
-{
-    if (connection == NULL || connection->method_url == NULL || connection->url_path == NULL)
-        return -1;
-
-    if (strcmp(connection->method_url, "GET") == 0)
-    {
-        if (strcmp(connection->url_path, "/") == 0)
-        {
-            printf("Handling GET / path\n");
-            // Could set response data here
-        }
-        else
-        {
-            printf("Unhandled GET path: %s\n", connection->url_path);
-        }
-    }
-    else if (strcmp(connection->method_url, "POST") == 0)
-    {
-        if (strcmp(connection->url_path, "/") == 0)
-        {
-            printf("Handling POST / path\n");
-            // Could set response data here
-        }
-        else
-        {
-            printf("Unhandled POST path: %s\n", connection->url_path);
-        }
-    }
-
-    return 0;
+    connection->context = _Context;
+    connection->handler = (void*)callback;
+    
 }
 
 int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *body)
@@ -340,13 +271,13 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
 
 
-        HTTPServerHandler_ParseInputParameters(connection->url);
+       // HTTPServerHandler_ParseInputParameters(connection->url);
         // Check if we need to read body (happens every time we read more data)
 
         // No body expected - build URL and move to handlers
 
         //HTTPServer_RegisterRoute(connection, "GET", "/", Handle_Weather);
-        HTTPServer_RegisterRoute(connection, "GET", "/api/v1/gwd?lat=5.1232&lon=5.32132", Handle_Weather);
+        //HTTPServer_RegisterRoute(connection, "GET", "/api/v1/gwd?lat=5.1232&lon=5.32132", Handle_Weather);
         //HTTPServer_RegisterRoute(connection, "GET", "/users", Handle_UsersGET);
         //HTTPServer_RegisterRoute(connection, "POST", "/users", Handle_UsersPOST);
 

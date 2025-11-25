@@ -3,8 +3,6 @@
 
 #include "../HTTPServerConnection.h"
 
-typedef struct HTTPServerConnection HTTPServerConnection;
-
 // Now we can use the full type
 typedef char* (*RequestHandler)(HTTPServerConnection* connection);
 
