@@ -76,30 +76,37 @@ int HTTPConnection_Write(HTTPServerConnection *connection, char *buffer, size_t 
 }
 
 // Returns: 0 on success, -1 on error, 1 if needs more data
-int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
-{
+int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)         // MFs we should free method && url_path && host at top each call 15++ lines saved
+{                                                                                                       // (  o   )Y(  o  )
     if (connection == NULL)
         return -1;
 
-    if (connection->recv_buffer_length < 18)
-        return 1; // Need more data
-
-    if (connection->recv_buffer_length > 1024)
+    char *header_end = strstr(connection->recv_buffer, "\r\n\r\n");
+    if (header_end == NULL) 
     {
-        printf("HTTPServerConnection_ParseHeader: Headers too large (>1024 bytes)\n");
+        
+        if (connection->recv_buffer_length >= sizeof(connection->recv_buffer) - 1)
+        {
+            printf("HTTPServerConnection_ParseHeader: Headers too large (buffer full)\n");
+            return -1;
+        }
+        return 1;
+    }
+
+    // Now validate header size (not total buffer size)
+    size_t header_size = (header_end + 4) - connection->recv_buffer;
+    if (header_size > 1024)
+    {
+        printf("HTTPServerConnection_ParseHeader: Headers too large (%zu bytes)\n", header_size);
         return -1;
     }
 
-    if (strstr(connection->recv_buffer, "\r\n\r\n") == NULL) // if headers not complete
-        return 1;                                            // Need more data
-
-    // Validate HTTP line endings - reject requests with bare LF
     char *check_ptr = connection->recv_buffer;
-    while (*check_ptr != '\0' && check_ptr < connection->recv_buffer + connection->recv_buffer_length)
+    while (check_ptr < connection->recv_buffer + connection->recv_buffer_length)    
     {
         if (*check_ptr == '\n')
         {
-            // Check if preceded by \r
+
             if (check_ptr == connection->recv_buffer || *(check_ptr - 1) != '\r')
             {
                 printf("HTTPServerConnection_ParseHeader: Invalid line ending (bare LF without CR)\n");
@@ -109,7 +116,6 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
         check_ptr++;
     }
 
-    // Parse method
     if (strncmp(connection->recv_buffer, "GET ", 4) == 0)
     {
         connection->method_url = strndup("GET", 3);
@@ -117,6 +123,10 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     else if (strncmp(connection->recv_buffer, "POST ", 5) == 0)
     {
         connection->method_url = strndup("POST", 4);
+    }
+    else if (strncmp(connection->recv_buffer, "OPTIONS ", 8) == 0)
+    {
+        connection->method_url = strndup("OPTIONS", 7);
     }
     else
     {
@@ -127,17 +137,35 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     // Parse path
     char *path_start = strchr(connection->recv_buffer, ' ');
     if (path_start == NULL)
+    {
+        free(connection->method_url);
+        connection->method_url = NULL;
         return -1;
+    }
 
     path_start++;
     char *path_end = strchr(path_start, ' ');
     if (path_end == NULL)
+    {
+        free(connection->method_url);
+        connection->method_url = NULL;
         return -1;
+    }
 
-    connection->url_path = strndup(path_start, path_end - path_start);
+    size_t path_len = path_end - path_start;
+    if (path_len > 2048)
+    {
+        free(connection->method_url);
+        connection->method_url = NULL;
+        printf("HTTPServerConnection_ParseHeader: URL path too long (%zu bytes)\n", path_len);
+        return -1;
+    }
+
+    connection->url_path = strndup(path_start, path_len);
     if (connection->url_path == NULL)
     {
         free(connection->method_url);
+        connection->method_url = NULL;
         printf("HTTPServerConnection_ParseHeader: Failed to copy url\n");
         return -1;
     }
@@ -150,11 +178,23 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
         char *eol = strstr(host, "\r\n");
         if (eol != NULL)
         {
-            connection->host = strndup(host, eol - host);
+            size_t host_len = eol - host;
+            if (host_len > 256)
+            {
+                free(connection->url_path);
+                connection->url_path = NULL;
+                free(connection->method_url);
+                connection->method_url = NULL;
+                printf("HTTPServerConnection_ParseHeader: Host header too long (%zu bytes)\n", host_len);
+                return -1;
+            }
+            connection->host = strndup(host, host_len);
             if (connection->host == NULL)
             {
                 free(connection->url_path);
+                connection->url_path = NULL;
                 free(connection->method_url);
+                connection->method_url = NULL;
                 printf("HTTPServerConnection_ParseHeader: Failed to copy host\n");
                 return -1;
             }
@@ -171,11 +211,14 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     }
 
     free(connection->method_url);
+    connection->method_url = NULL;
     free(connection->url_path);
+    connection->url_path = NULL;
+    free(connection->host);
+    connection->host = NULL;
     return -1;
 }
 
-// Returns: 0 on success, -1 on error
 
 void HTTPServer_RegisterRoute(HTTPServerConnection *server, const char *method, const char *path, RequestHandler handler)
 {
@@ -214,39 +257,6 @@ RequestHandler HTTPServer_FindHandler(HTTPServerConnection *server, const char *
     return NULL; // fix to set status code to 404
 }
 
-// Returns: 0 on success, -1 on error
-int HTTPServerConnection_HandleRequest(HTTPServerConnection *connection)
-{
-    if (connection == NULL || connection->method_url == NULL || connection->url_path == NULL)
-        return -1;
-
-    if (strcmp(connection->method_url, "GET") == 0)
-    {
-        if (strcmp(connection->url_path, "/") == 0)
-        {
-            printf("Handling GET / path\n");
-            // Could set response data here
-        }
-        else
-        {
-            printf("Unhandled GET path: %s\n", connection->url_path);
-        }
-    }
-    else if (strcmp(connection->method_url, "POST") == 0)
-    {
-        if (strcmp(connection->url_path, "/") == 0)
-        {
-            printf("Handling POST / path\n");
-            // Could set response data here
-        }
-        else
-        {
-            printf("Unhandled POST path: %s\n", connection->url_path);
-        }
-    }
-
-    return 0;
-}
 
 int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *body)
 {
@@ -288,6 +298,9 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *bo
                           "HTTP/1.1 %d %s\r\n"
                           "Content-Length: %zu\r\n"
                           "Content-Type: application/json\r\n"
+                          "Access-Control-Allow-Origin: *\r\n"
+                          "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+                          "Access-Control-Allow-Headers: Content-Type\r\n"
                           "\r\n"
                           "%s",
                           connection->status_code, status_text, strlen(body), body);
@@ -312,7 +325,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
         if (bytesRead < 0)
         {
-            return;
+            return;         //Need timeout
         }
 
         if (bytesRead == 0)
@@ -323,8 +336,8 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         connection->recv_buffer_length += bytesRead;
         connection->recv_buffer[connection->recv_buffer_length] = '\0';
 
-        // Try to parse the header (only once)
-        if (connection->method_url == NULL)
+        
+        if (connection->url == NULL && connection->recv_buffer_length >= 18)
         {
             int parse_result = HTTPServerConnection_ParseHeader(connection);
             if (parse_result == 1)
@@ -339,33 +352,38 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         }
 
 
-
-        HTTPServerHandler_ParseInputParameters(connection->url);
-        // Check if we need to read body (happens every time we read more data)
-
-        // No body expected - build URL and move to handlers
-
-        //HTTPServer_RegisterRoute(connection, "GET", "/", Handle_Weather);
-        HTTPServer_RegisterRoute(connection, "GET", "/api/v1/gwd?lat=5.1232&lon=5.32132", Handle_Weather);
-        //HTTPServer_RegisterRoute(connection, "GET", "/users", Handle_UsersGET);
-        //HTTPServer_RegisterRoute(connection, "POST", "/users", Handle_UsersPOST);
-
-        connection->handler = HTTPServer_FindHandler(connection,
-                                                     connection->method_url,
-                                                     connection->url_path);
-
-        if (connection->handler == NULL)
+        if (connection->url != NULL)
         {
-            printf("No handler found: %s %s\n", connection->method_url, connection->url_path);
-            connection->status_code = 404;
+            printf("Parsed URL: %s\n", connection->url);
+            connection->state = HTTPServerConnection_State_Handlers;
         }
-
-        connection->state = HTTPServerConnection_State_Handlers;
     }
     break;
 
     case HTTPServerConnection_State_Handlers:
     {
+
+        if (connection->handler == NULL)
+        {
+            HTTPServerHandler_ParseInputParameters(connection->url);
+
+            //HTTPServer_RegisterRoute(connection, "GET", "/", Handle_Weather);
+            HTTPServer_RegisterRoute(connection, "GET", "/api/v1/gwd?lat=5.1232&lon=5.32132", Handle_Weather);
+            //HTTPServer_RegisterRoute(connection, "GET", "/users", Handle_UsersGET);
+            //HTTPServer_RegisterRoute(connection, "POST", "/users", Handle_UsersPOST);
+            
+            connection->handler = HTTPServer_FindHandler(connection,
+                                            connection->method_url,
+                                            connection->url_path);
+                
+            if (connection->handler == NULL)
+            {
+                printf("No handler found: %s %s\n", connection->method_url, connection->url_path);
+                connection->status_code = 404;
+            }
+        }
+        
+
         if (connection->handler != NULL)
         {
             HandlerFunc handler = (HandlerFunc)connection->handler;
@@ -438,7 +456,6 @@ void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
     printf("Cleanup: Socket %d\n", connection->socket);
     tcpserver_disconnect(connection->socket);
 
-    // Destroy task to stop work function from being called again
     if (connection->task != NULL)
     {
         smw_destroy_task(connection->task);
@@ -446,7 +463,8 @@ void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
     }
 }
 
-// Let the work function finish the dispose
+                //merge
+
 void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
 {
     if (connection == NULL || *connection == NULL)

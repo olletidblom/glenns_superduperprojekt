@@ -58,7 +58,6 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
 
 int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection);
 int HTTPServerConnection_BuildURL(HTTPServerConnection *connection);
-int HTTPServerConnection_HandleRequest(HTTPServerConnection *connection);
 int HTTPServerConnection_SendResponse(HTTPServerConnection* connection, char *body);
 
 void HTTPServerConnection_Dispose(HTTPServerConnection **server);

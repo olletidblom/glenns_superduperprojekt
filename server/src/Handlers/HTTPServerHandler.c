@@ -1,6 +1,7 @@
 #include "HTTPServerHandler.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 /*
 AnonymFunkion* HTTPServerHandler_run = ChooseAPI_return_funktion; ->
@@ -31,15 +32,23 @@ void HTTPServerHandler_ParseInputParameters(const char *url)
     if (param_start != NULL)
     {
         
-        printf("Param_start = %s : url_cpy = %p : url_cpy_length = %d\n", param_start, url_cpy, strlen(url_cpy));
+        printf("Param_start = %s : url_cpy = %p : url_cpy_length = %zu\n", param_start, url_cpy, strlen(url_cpy));
         param_start++;
     }
 
     //TODO: Add error checks
     printf("param_start: %s", param_start);
+    
+    if (param_start == NULL)
+    {
+        free(handler->parameters);
+        free(handler);
+        free(url_cpy);
+        return;
+    }
+    
     char* first_param = strtok(param_start, "&");
-    int i;
-    for(i = 0; first_param != NULL; i++)
+    for(; first_param != NULL; )
     {
         char* split = strchr(first_param, '=');
         if(split) {
@@ -49,10 +58,10 @@ void HTTPServerHandler_ParseInputParameters(const char *url)
                 //TODO: Handle fail
                 if(temp) handler->parameters = temp;
             }
-             handler->parameters[i].key = strndup(first_param, split - first_param);
-             handler->parameters[i].value = strndup(split+sizeof(char), strlen(split+sizeof(char)));
+             handler->parameters[pairsLength].key = strndup(first_param, split - first_param);
+             handler->parameters[pairsLength].value = strndup(split+sizeof(char), strlen(split+sizeof(char)));
              pairsLength++;
-             printf("key: %s value: %s \n", handler->parameters[i].key, handler->parameters[i].value);
+             printf("key: %s value: %s \n", handler->parameters[pairsLength-1].key, handler->parameters[pairsLength-1].value);
              
         }
         first_param = strtok(NULL, "&");
