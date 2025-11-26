@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "http.h": "c",
-        "httpserverconnection.h": "c"
+        "httpserverconnection.h": "c",
+        "httpserverhandler.h": "c"
     }
 }

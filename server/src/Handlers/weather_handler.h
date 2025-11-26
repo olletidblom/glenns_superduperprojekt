@@ -1,10 +1,10 @@
 #ifndef WEATHER_HANDLER_H
 #define WEATHER_HANDLER_H
 
-#include "handler.h"
+#include "HTTPServerHandler.h"
 
-char* Handle_Weather(HTTPServerConnection* conn);
-char* Handle_UsersGET(HTTPServerConnection* conn);
-char* Handle_UsersPOST(HTTPServerConnection* conn);
+char* Handle_Weather(void* _Context);
+char* Handle_UsersGET(void* _Context);
+char* Handle_UsersPOST(void* _Context);
 
 #endif

@@ -23,7 +23,7 @@ int main() {
     smw_work(monTime);
   }
 
-  HTTPServer_Dispose(&httpServer);
+  //HTTPServer_Dispose(&httpServer);
   smw_dispose();
   
 

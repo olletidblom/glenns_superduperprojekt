@@ -158,13 +158,17 @@ void tcpserver_disconnect(int socket)
 
 void tcpserver_dispose(TCPServer *server)
 {
+  if(server == NULL || server->server_socket == -1)
+  return;
+
+  if(server->task != NULL)
+  smw_destroy_task(server->task);
+  
   close(server->server_socket);
 
     free(server->client);
     server->client = NULL;
+  
+  free(server);
 
-  for (int i = 0; i < server->backlog; i++)
-  {
-    close(server->client[i].client_socket);
-  }
 }

@@ -1,4 +1,5 @@
 #include "HTTPServer.h"
+#include "Handlers/weather_handler.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -8,7 +9,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+int is_active = 0;
 void HTTPServer_OnConnect(void* _Context, int socket);
 int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length);
 
@@ -28,10 +29,9 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->task = smw_create_task(http_server, HTTPServer_work);
   http_server->status = http_server_initialized;
   http_server->method = method;
+  http_server->tcp_server = tcp_server;
 
-
-  //initialize routes
-  //array of Route structs
+  HTTPServer_RegisterRoute("gwd", Handle_Weather);
 
   printf("Initializing TCP server\n");
   tcpserver_listen(tcp_server, 10180, 1000, HTTPServer_OnConnect, http_server);
@@ -50,12 +50,21 @@ void HTTPServer_OnConnect(void* _Context, int socket)
   if (server == NULL)
     return;
 
-  HTTPServerConnection* connection = NULL;
-  if( HTTPServerConnection_Initialize(&connection, socket, server) < 0) // added , server
+  server->connection = NULL;
+  if( HTTPServerConnection_Initialize(&server->connection, socket, server, &is_active) < 0) // added , server
   {
     printf("Failed to initialize HTTP server connection\n");
     return;
   }
+  printf("HELLOHELLO %p\n", server->connection);
+  HTTPServerHandler* handler = NULL;
+
+  if(HTTPServerHandler_Initialize(&handler, server->connection, HTTPServer_FindRoute) < 0)
+  {
+    printf("Failed to initialize handler\n");
+    return;
+  }
+
 
 }
 
@@ -79,9 +88,12 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
 {
   HTTPServer *server = (HTTPServer *)_Context;
 
-  if (server == NULL)
+  if (server == NULL || server->connection == NULL)
     return;
 
+  printf("dsadsa %d\n", is_active);
+  if(is_active == 1)
+  HTTPServer_Dispose(&server);
 
 }
 
@@ -113,9 +125,8 @@ void HTTPServer_Dispose(HTTPServer **server)
 
   if (_server->task != NULL)
     smw_destroy_task(_server->task);
-
+  HTTPServer_RouteCleanup();
   tcpserver_dispose(_server->tcp_server);
-  free(_server->url);
   free(_server);
   *server = NULL;
 }

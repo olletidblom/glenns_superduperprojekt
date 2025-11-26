@@ -1,21 +1,36 @@
 #ifndef HTTP_SERVER_HANDLER_H
 #define HTTP_SERVER_HANDLER_H
 
-
 #define _POSIX_C_SOURCE 200809L
 
-typedef struct {
-    char* key;
-    char* value;
+#include "handler.h"
+
+
+
+
+typedef RequestHandler (*Handler)(const char* end_point); 
+
+typedef struct
+{
+    char *key;
+    char *value;
+    int pairsLength;
+    int maxPairs;
 } HTTPInputParameters;
 
-typedef struct{
-    char* end_point;
-    HTTPInputParameters* parameters;  
-}HTTPServerHandler;
+typedef struct
+{
+    char *end_point;
+    HTTPInputParameters *parameters;
+    Handler onParse;
+} HTTPServerHandler;
 
+int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _OnParse);
 
-void HTTPServerHandler_ParseInputParameters(const char* url);
+RequestHandler HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
+
+void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler);
+
 
 
 #endif // HTTP_SERVER_HANDLER_H

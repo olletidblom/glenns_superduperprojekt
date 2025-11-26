@@ -40,6 +40,8 @@ typedef struct {
   HTTP_Method method;
   TCPServer *tcp_server;
 
+   HTTPServerConnection* connection;
+
   void* context;
   int response_code;
 

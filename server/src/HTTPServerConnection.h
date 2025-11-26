@@ -7,6 +7,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef void* (*OnParse)(void* _Context, const char* path);
+
+typedef char* (*OnProcess)(void* _Context);
+
 
 
 /*
@@ -41,20 +45,22 @@ typedef struct
   char recv_buffer[2048];
   size_t recv_buffer_length;
   int content_length;
-
+  int* is_active;
   char *request_body; // POST/PUT body data
 
-  void *handler; // Function pointer (void* to avoid circular dependency)
+  OnParse handler_parse;
+  OnProcess handler_process;  // Function pointer (void* to avoid circular dependency)
   char *response_body;
   int status_code;
 }HTTPServerConnection;
 
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context);
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context, int* is_active);
 
 int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection);
-int HTTPServerConnection_BuildURL(HTTPServerConnection *connection);
-int HTTPServerConnection_HandleRequest(HTTPServerConnection *connection);
+
 int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *body);
+
+void HTTPServerConnection_SetCallback(void* _Connection, void* _Context, OnParse onHandle);
 
 void HTTPServerConnection_Dispose(HTTPServerConnection **server);
 #endif

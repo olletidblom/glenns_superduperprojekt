@@ -24,7 +24,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime);
 void HTTPServerConnection_Cleanup(HTTPServerConnection *connection);
 void HTTPServerConnection_Disconnect(HTTPServerConnection *connection);
 
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context)
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context, int *is_active)
 {
 
     if (connection == NULL)
@@ -37,15 +37,16 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
     _Connection->url = NULL;
     _Connection->host = NULL;
     _Connection->url_path = NULL;
-    _Connection->context = server_context;
-
+    _Connection->context = NULL;
+    _Connection->is_active = is_active;
     _Connection->content_length = 0;
     _Connection->recv_buffer_length = 0;
     _Connection->recv_buffer[0] = '\0';
 
     _Connection->request_body = NULL;
 
-    _Connection->handler = NULL;
+    _Connection->handler_parse = NULL;
+    _Connection->handler_process = NULL;
     _Connection->response_body = NULL;
     _Connection->status_code = 200;
 
@@ -161,6 +162,9 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
         snprintf(temp_buffer, sizeof(temp_buffer), "http://%s%s", connection->host, connection->url_path);
         connection->url = strdup(temp_buffer);
         printf("Built URL: %s\n", connection->url);
+        free(connection->host);
+        free(connection->method_url);
+        free(connection->url_path);
         return 0;
     }
 
@@ -169,14 +173,15 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     return -1;
 }
 
-void HTTPServerConnection_SetCallback(HTTPServerConnection* connection, void* _Context, void (*callback)(HTTPServerConnection* _Connection))
+void HTTPServerConnection_SetCallback(void* _Connection, void *_Context, OnParse onHandle)
 {
-    if (connection == NULL || callback == NULL)
+    HTTPServerConnection* connection = (HTTPServerConnection*)_Connection;
+    if (connection == NULL)
         return;
 
+    printf("pointer: %p\n", connection);
     connection->context = _Context;
-    connection->handler = (void*)callback;
-    
+    connection->handler_parse = onHandle;
 }
 
 int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *body)
@@ -229,7 +234,6 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *bo
 
 void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 {
-
     HTTPServerConnection *connection = (HTTPServerConnection *)_Context;
     if (connection == NULL)
         return;
@@ -269,23 +273,9 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
             }
         }
 
+        connection->handler_process = connection->handler_parse(connection->context, connection->url);
 
-
-       // HTTPServerHandler_ParseInputParameters(connection->url);
-        // Check if we need to read body (happens every time we read more data)
-
-        // No body expected - build URL and move to handlers
-
-        //HTTPServer_RegisterRoute(connection, "GET", "/", Handle_Weather);
-        //HTTPServer_RegisterRoute(connection, "GET", "/api/v1/gwd?lat=5.1232&lon=5.32132", Handle_Weather);
-        //HTTPServer_RegisterRoute(connection, "GET", "/users", Handle_UsersGET);
-        //HTTPServer_RegisterRoute(connection, "POST", "/users", Handle_UsersPOST);
-
-        connection->handler = HTTPServer_FindHandler(connection,
-                                                     connection->method_url,
-                                                     connection->url_path);
-
-        if (connection->handler == NULL)
+        if (connection->handler_process == NULL)
         {
             printf("No handler found: %s %s\n", connection->method_url, connection->url_path);
             connection->status_code = 404;
@@ -297,18 +287,9 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
     case HTTPServerConnection_State_Handlers:
     {
-        if (connection->handler != NULL)
-        {
-            HandlerFunc handler = (HandlerFunc)connection->handler;
-            connection->response_body = handler(connection);
-            printf("Handler executed for %s %s\n", connection->method_url, connection->url_path);
-        }
-        else
-        {
-            connection->status_code = 404;
-            connection->response_body = strdup("{\"error\":\"Not Found\"}");
-        }
-
+        printf("are we crashing here?\n");
+        connection->response_body = connection->handler_process(connection->context);
+        printf("we are not\n");
         connection->state = HTTPServerConnection_State_Response;
     }
     break;
@@ -323,34 +304,19 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
     case HTTPServerConnection_State_Cleanup:
     {
+        printf("cleaned up!\n");
         HTTPServerConnection_Cleanup(connection);
     }
     break;
     }
 }
 
-
-
 void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
 {
+
     if (connection == NULL)
         return;
 
-    if (connection->url_path != NULL)
-    {
-        free(connection->url_path);
-        connection->url_path = NULL;
-    }
-    if (connection->host != NULL)
-    {
-        free(connection->host);
-        connection->host = NULL;
-    }
-    if (connection->method_url != NULL)
-    {
-        free(connection->method_url);
-        connection->method_url = NULL;
-    }
     if (connection->url != NULL)
     {
         free(connection->url);
@@ -362,19 +328,13 @@ void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
         connection->request_body = NULL;
     }
 
-
-
     free(connection->response_body);
 
     printf("Cleanup: Socket %d\n", connection->socket);
     tcpserver_disconnect(connection->socket);
 
-    // Destroy task to stop work function from being called again
-    if (connection->task != NULL)
-    {
-        smw_destroy_task(connection->task);
-        connection->task = NULL;
-    }
+    HTTPServerConnection_Dispose(&connection);
+    *(connection->is_active) = 1;
 }
 
 // Let the work function finish the dispose
@@ -388,11 +348,5 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     if (_server->task != NULL)
         smw_destroy_task(_server->task);
 
-    close(_server->socket);
-    free(_server->host);
-    free(_server->method_url);
-    free(_server->url_path);
-    free(_server->url);
     free(_server);
-    *connection = NULL;
 }
