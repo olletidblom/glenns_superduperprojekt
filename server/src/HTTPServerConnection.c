@@ -30,24 +30,11 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
     if (connection == NULL)
         return -1;
 
-    HTTPServerConnection *_Connection = (HTTPServerConnection *)malloc(sizeof(HTTPServerConnection));
+    HTTPServerConnection *_Connection = (HTTPServerConnection *)calloc(1, sizeof(HTTPServerConnection));
 
     _Connection->socket = socket;
-    _Connection->method_url = NULL;
-    _Connection->url = NULL;
-    _Connection->host = NULL;
-    _Connection->url_path = NULL;
-    _Connection->context = NULL;
     _Connection->is_active = is_active;
-    _Connection->content_length = 0;
-    _Connection->recv_buffer_length = 0;
-    _Connection->recv_buffer[0] = '\0';
 
-    _Connection->request_body = NULL;
-
-    _Connection->handler_parse = NULL;
-    _Connection->handler_process = NULL;
-    _Connection->response_body = NULL;
     _Connection->status_code = 200;
 
     _Connection->state = HTTPServerConnection_State_Read_Make_URL;
@@ -279,6 +266,8 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         {
             printf("No handler found: %s %s\n", connection->method_url, connection->url_path);
             connection->status_code = 404;
+            connection->state = HTTPServerConnection_State_Response;
+            break;
         }
 
         connection->state = HTTPServerConnection_State_Handlers;

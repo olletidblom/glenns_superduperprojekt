@@ -2,6 +2,7 @@
     "files.associations": {
         "http.h": "c",
         "httpserverconnection.h": "c",
-        "httpserverhandler.h": "c"
+        "httpserverhandler.h": "c",
+        "cities.h": "c"
     }
 }

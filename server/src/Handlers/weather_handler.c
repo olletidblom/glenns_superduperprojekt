@@ -1,4 +1,5 @@
 #include "weather_handler.h"
+#include "../../glenns_metro/src/City.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,8 @@ char* Handle_Weather(void* _Context)
     printf("Weather handler called %s\n", handler->parameters->value);
     char lat_temp[32];
     char lon_temp[32];
+    char city_name[64];
+    char country_code[8];
     for(int i = 0; i < handler->parameters->pairsLength; i++)
     {
         if(strcmp(handler->parameters[i].key, "lat") == 0)
@@ -21,9 +24,33 @@ char* Handle_Weather(void* _Context)
             snprintf(lon_temp, sizeof(lon_temp), "%s", handler->parameters[i].value);
             lon_temp[sizeof(lon_temp)-1] = '\0';
         }
+
+        if(strcmp(handler->parameters[i].key, "city") == 0)
+        {
+            snprintf(city_name, sizeof(city_name), "%s", handler->parameters[i].value);
+            city_name[sizeof(city_name)-1] = '\0';
+        }
+        else if(strcmp(handler->parameters[i].key, "countryCode") == 0)
+        {
+            snprintf(country_code, sizeof(country_code), "%s", handler->parameters[i].value);
+            country_code[sizeof(country_code)-1] = '\0';
+        }
     }
-    printf("Latitude: %s, Longitude: %s\n", lat_temp, lon_temp);
+    City* city = NULL;
+    City_Init(city_name, country_code, 0, 0, &city);
+    if(city == NULL)
+    {
+        printf("Failed to create City object\n");
+    }
+    float temperature = 0.0f;
+    int res = City_GetValue(city, "temperature_2m", &temperature, NULL);
+    if(res != 0)
+    {
+        printf("Failed to get temperature for City %d\n", res);
+    }
+    printf("Latitude: %.f, Longitude: %.f\n", temperature, temperature);
     HTTPServerHandler_Dispose(&handler);
+    City_Dispose(&city);
     return strdup("{\"temperature\":25,\"condition\":\"sunny\",\"location\":\"Stockholm\"}");
 }
 

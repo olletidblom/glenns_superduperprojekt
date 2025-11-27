@@ -1,4 +1,5 @@
 #include "HTTPServer.h"
+#include "Handlers/handler.h"
 #include "Handlers/weather_handler.h"
 #include <errno.h>
 #include <netdb.h>
@@ -32,6 +33,8 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->tcp_server = tcp_server;
 
   HTTPServer_RegisterRoute("gwd", Handle_Weather);
+
+  Cities_Init(&http_server->cities);
 
   printf("Initializing TCP server\n");
   tcpserver_listen(tcp_server, 10180, 1000, HTTPServer_OnConnect, http_server);
@@ -125,6 +128,10 @@ void HTTPServer_Dispose(HTTPServer **server)
 
   if (_server->task != NULL)
     smw_destroy_task(_server->task);
+  
+  
+
+  Cities_Dispose(&_server->cities);
   HTTPServer_RouteCleanup();
   tcpserver_dispose(_server->tcp_server);
   free(_server);

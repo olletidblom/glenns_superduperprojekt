@@ -5,6 +5,7 @@
 #include "TCPServer.h"
 #include "HTTPServerConnection.h"
 #include "../../libs/smw.h"
+#include "../../glenns_metro/src/Cities.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,7 +40,7 @@ typedef struct {
   HTTP_Status status;
   HTTP_Method method;
   TCPServer *tcp_server;
-
+  Cities* cities;
    HTTPServerConnection* connection;
 
   void* context;

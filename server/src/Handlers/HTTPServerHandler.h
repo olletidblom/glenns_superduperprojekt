@@ -3,12 +3,10 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#include "handler.h"
 
+typedef char* (*RouteFunction)(void* _Context);
 
-
-
-typedef RequestHandler (*Handler)(const char* end_point); 
+typedef RouteFunction (*Handler)(const char* end_point); 
 
 typedef struct
 {
@@ -27,7 +25,7 @@ typedef struct
 
 int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _OnParse);
 
-RequestHandler HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
+RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
 
 void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler);
 

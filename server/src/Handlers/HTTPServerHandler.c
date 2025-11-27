@@ -10,7 +10,7 @@ weather_handler -> HTTPServerHandler_run();
 
 void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler);
 
-RequestHandler HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
+RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
 
 int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _OnParse)
 {
@@ -119,25 +119,28 @@ int HTTPServerHandler_ParseInputParameters(HTTPServerHandler *_ServerHandler, ch
     return 0;
 }
 
-RequestHandler HTTPServerHandler_Parse(HTTPServerHandler *_ServerHandler, char *url)
+RouteFunction HTTPServerHandler_Parse(HTTPServerHandler *_ServerHandler, char *url)
 {
     int result = HTTPServerHandler_ParseEndPoint(_ServerHandler, url);
 
     if(result != 0)
-    return;
-
+    {
+        HTTPServerHandler_Dispose(&_ServerHandler);
+        return NULL;
+    }
     //invalid here
-    RequestHandler function = _ServerHandler->onParse(_ServerHandler->end_point);
+    RouteFunction function = _ServerHandler->onParse(_ServerHandler->end_point);
 
     result = HTTPServerHandler_ParseInputParameters(_ServerHandler, url);
 
     if(result == 0)
     return function;
 
+    HTTPServerHandler_Dispose(&_ServerHandler);
     return NULL;
 }
 
-RequestHandler HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url)
+RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url)
 {
     
 
