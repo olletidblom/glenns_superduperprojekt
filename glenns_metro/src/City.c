@@ -211,7 +211,6 @@ json_t *City_GetWeatherData(City *_City)
     return NULL;
   }
 
-  HTTPClient_Dispose(&client);
 
   json_t *results = json_object_get(cords, "results");
   if (!json_is_array(results) || json_array_size(results) == 0)
@@ -236,6 +235,9 @@ json_t *City_GetWeatherData(City *_City)
   snprintf(url, sizeof(url), CITY_WEATHER_API_URL, _City->latitude,
            _City->longitude);
 
+
+  HTTPClient_Dispose(&client);
+
   result = HTTPClient_Init(&client);
   if (result != 0)
   {
@@ -243,7 +245,7 @@ json_t *City_GetWeatherData(City *_City)
     City_Dispose(&_City);
     return NULL;
   }
-  
+
   json_t *json = HTTPClient_GetWeather(client, url);
   if (json == NULL)
   {
