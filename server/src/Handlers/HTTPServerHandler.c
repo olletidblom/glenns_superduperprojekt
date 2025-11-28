@@ -164,8 +164,8 @@ void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler)
     //if(handler->end_point == NULL)
    // printf("crash %s \n", handler->end_point);
 
-    if (handler->end_point != NULL)
-        free(handler->end_point);
+    //if (handler->end_point != NULL)
+        //free(handler->end_point);
 
     for (int i = 0; i < handler->parameters->pairsLength; i++)
     {
