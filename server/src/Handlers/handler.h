@@ -3,7 +3,6 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#include "../HTTPServerConnection.h"
 
 // Now we can use the full type
 typedef char* (*RequestHandler)(void* _Context);

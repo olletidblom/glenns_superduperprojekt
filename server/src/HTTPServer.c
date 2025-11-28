@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 int is_active = 0;
-void HTTPServer_OnConnect(void* _Context, int socket);
+int HTTPServer_OnConnect(void* _Context, int socket);
 int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length);
 
 void HTTPServer_work(void *_Context, uint64_t monTime);
@@ -45,19 +45,19 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 
 
 
-void HTTPServer_OnConnect(void* _Context, int socket)
+int HTTPServer_OnConnect(void* _Context, int socket)
 {
   printf("HTTP Server: Connection received on socket %d\n", socket);
   HTTPServer* server = (HTTPServer *)_Context;
 
   if (server == NULL)
-    return;
+    return -1;
 
   server->connection = NULL;
   if( HTTPServerConnection_Initialize(&server->connection, socket, server, &is_active) < 0) // added , server
   {
     printf("Failed to initialize HTTP server connection\n");
-    return;
+    return -2;
   }
   printf("HELLOHELLO %p\n", server->connection);
   HTTPServerHandler* handler = NULL;
@@ -65,7 +65,7 @@ void HTTPServer_OnConnect(void* _Context, int socket)
   if(HTTPServerHandler_Initialize(&handler, server->connection, HTTPServer_FindRoute) < 0)
   {
     printf("Failed to initialize handler\n");
-    return;
+    return -3;
   }
 
 
@@ -94,9 +94,8 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
   if (server == NULL || server->connection == NULL)
     return;
 
-  printf("dsadsa %d\n", is_active);
-  if(is_active == 1)
-  HTTPServer_Dispose(&server);
+  //if(is_active == 1)
+ // HTTPServer_Dispose(&server);
 
 }
 

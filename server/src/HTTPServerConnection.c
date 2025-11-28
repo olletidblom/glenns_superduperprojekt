@@ -73,7 +73,7 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)
     }
 
     if (strstr(connection->recv_buffer, "\r\n\r\n") == NULL) // if headers not complete
-        return 1;                                            // Need more data
+        return 2;                                            // Need more data
 
     // Validate HTTP line endings - reject requests with bare LF
     char *check_ptr = connection->recv_buffer;
@@ -249,12 +249,14 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         if (connection->method_url == NULL)
         {
             int parse_result = HTTPServerConnection_ParseHeader(connection);
-            if (parse_result == 1)
+            if (parse_result >= 1)
             {
+                printf("Failed to %d\n", parse_result);
                 return; // Need more header data
             }
             else if (parse_result < 0)
             {
+                printf("Failed to parse HTTP header %d\n", parse_result);
                 connection->state = HTTPServerConnection_State_Cleanup;
                 return;
             }

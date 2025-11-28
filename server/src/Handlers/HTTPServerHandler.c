@@ -121,28 +121,35 @@ int HTTPServerHandler_ParseInputParameters(HTTPServerHandler *_ServerHandler, ch
 
 RouteFunction HTTPServerHandler_Parse(HTTPServerHandler *_ServerHandler, char *url)
 {
+    
     int result = HTTPServerHandler_ParseEndPoint(_ServerHandler, url);
 
     if(result != 0)
     {
+        printf("Parsing HTTPServerHandler with url: %d\n", result);
         HTTPServerHandler_Dispose(&_ServerHandler);
+        printf("crash %d\n", result);
         return NULL;
     }
     //invalid here
+    printf("2\n");
     RouteFunction function = _ServerHandler->onParse(_ServerHandler->end_point);
 
     result = HTTPServerHandler_ParseInputParameters(_ServerHandler, url);
-
+    printf("1\n");
     if(result == 0)
     return function;
 
+
+    printf("freeingfds\n");
     HTTPServerHandler_Dispose(&_ServerHandler);
     return NULL;
 }
 
 RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url)
 {
-    
+    if(_ServerHandler == NULL || url == NULL)
+    return NULL;
 
     return HTTPServerHandler_Parse(_ServerHandler, url);;
 }
@@ -154,8 +161,11 @@ void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler)
 
     HTTPServerHandler *handler = *_ServerHandler;
 
-    if (handler->end_point != NULL)
-        free(handler->end_point);
+    //if(handler->end_point == NULL)
+   // printf("crash %s \n", handler->end_point);
+
+    //if (handler->end_point != NULL)
+        //free(handler->end_point);
 
     for (int i = 0; i < handler->parameters->pairsLength; i++)
     {
@@ -165,7 +175,7 @@ void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler)
         if (handler->parameters[i].value != NULL)
             free(handler->parameters[i].value);
     }
-
+    
     free(handler->parameters);
     free(handler);
 }

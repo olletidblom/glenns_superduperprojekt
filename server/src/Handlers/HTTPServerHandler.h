@@ -3,6 +3,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include "../HTTPServerConnection.h"
 
 typedef char* (*RouteFunction)(void* _Context);
 

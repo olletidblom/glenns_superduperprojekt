@@ -118,23 +118,18 @@ int tcpserver_accept(TCPServer *server)
     return -1;
   }
 
-  for (int i = 0; i < server->backlog; i++)
+
+  int result = server->onConnect(server->context, sock);
+
+  if (result < 0)
   {
-    if (server->client[i].client_socket < 0)
-    {
-      server->client[i].client_socket = sock;
-      if (server->onConnect != NULL)
-      {
-        server->onConnect(server->context, sock);
-      }
-      printf("Connected on socket %d\n", server->client[i].client_socket);
-      return 0;
-    }
+    printf("Connection callback failed\n");
+    close(sock);
+    return -1;
   }
 
-  printf("No space for more clients\n");
-  close(sock);
-  return -2;
+
+  return 0;
 }
 
 void tcpserver_work(void* _Context, uint64_t monTime)
@@ -152,6 +147,7 @@ void tcpserver_disconnect(int socket)
 {
 
   close(socket);
+  socket = -1;
   printf("Disconnected socket %d\n", socket);
 
 }

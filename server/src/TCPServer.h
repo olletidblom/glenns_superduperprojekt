@@ -9,7 +9,7 @@
 #include <sys/types.h>
 
 
-typedef void (*TCPServer_OnConnection)(void* context, int socket);
+typedef int (*TCPServer_OnConnection)(void* context, int socket);
 
 typedef struct {
   smw_task *task;
