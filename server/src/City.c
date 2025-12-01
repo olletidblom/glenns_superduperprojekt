@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-#include "HTTPClient.h"
+#include "../../libs/HTTPClient.h"
 #include "utils.h"
 
 //--------------Internal functions----------------
@@ -193,6 +193,8 @@ json_t *City_GetWeatherData(City *_City)
   }
 
   int result = 0;
+
+
 
 
   HTTPClient *client = NULL;

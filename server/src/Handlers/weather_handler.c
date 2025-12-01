@@ -1,5 +1,5 @@
 #include "weather_handler.h"
-#include "../../glenns_metro/src/City.h"
+#include "../City.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

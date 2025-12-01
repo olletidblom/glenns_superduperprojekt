@@ -5,7 +5,7 @@
 #include "TCPServer.h"
 #include "HTTPServerConnection.h"
 #include "../../libs/smw.h"
-#include "../../glenns_metro/src/Cities.h"
+#include "Cities.h"
 #include <stddef.h>
 #include <stdint.h>
 
