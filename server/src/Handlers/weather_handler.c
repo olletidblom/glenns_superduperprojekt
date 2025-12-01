@@ -45,7 +45,7 @@ char* Handle_Weather(void* _Context)
     char* weather_data = City_GetAll(city);
     HTTPServerHandler_Dispose(&handler);
     City_Dispose(&city);
-    return strdup(weather_data);
+    return weather_data;
 }
 
 char* Handle_UsersGET(void* _Context)

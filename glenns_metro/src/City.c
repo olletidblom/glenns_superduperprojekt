@@ -119,6 +119,7 @@ char* City_GetAll(City *_City)
     return NULL;
 
   json_t *weather = City_GetWeatherData(_City);
+
   if (weather == NULL)
   {
     printf("Failed to get weather data for City %s\n", _City->name);
@@ -128,6 +129,7 @@ char* City_GetAll(City *_City)
   json_decref(weather);
   return result;
 }
+
 // Skriv ut json till cities/<cityname>.json
 int City_WriteWeatherData(City *_City, json_t *weatherJson)
 {

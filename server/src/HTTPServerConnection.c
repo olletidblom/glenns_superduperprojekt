@@ -206,7 +206,7 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *bo
         break;
     }
 
-    char response[1024];
+    char response[2048];
     int length = snprintf(response, sizeof(response),
                           "HTTP/1.1 %d %s\r\n"
                           "Content-Length: %zu\r\n"
@@ -280,7 +280,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     {
         printf("are we crashing here?\n");
         connection->response_body = connection->handler_process(connection->context);
-        printf("we are not\n");
+        printf("response!!! %s \n", connection->response_body);
         connection->state = HTTPServerConnection_State_Response;
     }
     break;
