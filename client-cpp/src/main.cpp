@@ -25,10 +25,13 @@ int main()
         return -1;
     }
 
-    std::string response = client.TCPClient_Recieve();
+    std::string response = "";
 
     while (response.empty())
+    {
+        response = client.TCPClient_Recieve();
         continue;
+    }
 
     printf("\nResponse: %s \n", response.c_str());
 
