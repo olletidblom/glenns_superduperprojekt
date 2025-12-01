@@ -21,6 +21,8 @@ int City_Init(const char *_Name, const char *countryCode, const char *_Latitude,
 
 int City_GetValue(City* _City, const char* _Name, float* _Value, char _Unit[16]);
 
+char* City_GetAll(City *_City);
+
 void City_Dispose(City** _CityPtr);
 
 

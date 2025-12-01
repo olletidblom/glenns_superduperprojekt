@@ -113,6 +113,21 @@ int City_GetValue(City *_City, const char *_Name, float *_Value,
   return 0;
 }
 
+char* City_GetAll(City *_City)
+{
+  if (_City == NULL)
+    return NULL;
+
+  json_t *weather = City_GetWeatherData(_City);
+  if (weather == NULL)
+  {
+    printf("Failed to get weather data for City %s\n", _City->name);
+    return NULL;
+  }
+  char* result = json_dumps(weather, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
+  json_decref(weather);
+  return result;
+}
 // Skriv ut json till cities/<cityname>.json
 int City_WriteWeatherData(City *_City, json_t *weatherJson)
 {

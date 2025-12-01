@@ -32,6 +32,7 @@ int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Cont
     printf("hello2\n");
     handler->parameters->pairsLength = 0;
     handler->parameters->maxPairs = 2;
+    handler->end_point = NULL;
     
     HTTPServerConnection_SetCallback(_Context, handler, HTTPServerHandler_run);
 
@@ -164,8 +165,8 @@ void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler)
     //if(handler->end_point == NULL)
    // printf("crash %s \n", handler->end_point);
 
-    //if (handler->end_point != NULL)
-        //free(handler->end_point);
+    if (handler->end_point != NULL)
+        free(handler->end_point);
 
     for (int i = 0; i < handler->parameters->pairsLength; i++)
     {

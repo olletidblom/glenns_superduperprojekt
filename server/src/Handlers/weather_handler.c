@@ -42,16 +42,10 @@ char* Handle_Weather(void* _Context)
     {
         printf("Failed to create City object\n");
     }
-    float temperature = 0.0f;
-    int res = City_GetValue(city, "temperature_2m", &temperature, NULL);
-    if(res != 0)
-    {
-        printf("Failed to get temperature for City %d\n", res);
-    }
-    printf("Latitude: %.f, Longitude: %.f\n", temperature, temperature);
+    char* weather_data = City_GetAll(city);
     HTTPServerHandler_Dispose(&handler);
     City_Dispose(&city);
-    return strdup("{\"temperature\":25,\"condition\":\"sunny\",\"location\":\"Stockholm\"}");
+    return strdup(weather_data);
 }
 
 char* Handle_UsersGET(void* _Context)
