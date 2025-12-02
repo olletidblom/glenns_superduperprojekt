@@ -1,57 +1,37 @@
-CC      := gcc
-CFLAGS  := -Wall -Wextra -std=c11 
-LDFLAGS := -lcurl
-BUILD   := build
+# Root Makefile
 
-# Add include directories
-CFLAGS  += -Iglenns_metro/includes \
-           -Iglenns_metro/libs \
-           -Iserver/src \
-		   -Ilibs \
-           -Iserver/Handlers 
+# Directories
+SERVER_DIR := server/src
+C_CLIENT_DIR := client-c/src
+CXX_CLIENT_DIR := client-cpp/src
+LIBS_DIR := libs
 
-# ---- Find all source files recursively ----
-SRC := $(shell find glenns_metro server/src libs -name "*.c")
+# Targets for sub-projects
+all: server-client c-client cxx-client
 
-# Convert .c → build/.../.o
-OBJ := $(patsubst %.c, $(BUILD)/%.o, $(SRC))
+# Delegate build to subfolders
+server:
+	$(MAKE) -C $(SERVER_DIR)
 
-# ---- Final target ----
-TARGET := gln_app
+c-client:
+	$(MAKE) -C $(C_CLIENT_DIR)
 
-all: $(TARGET)
+cxx-client:
+	$(MAKE) -C $(CXX_CLIENT_DIR)
 
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+run-server:
+	$(MAKE) -C $(SERVER_DIR) run
 
-# ---- Rule to compile each .c file ----
-$(BUILD)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+run-c-client:
+	$(MAKE) -C $(C_CLIENT_DIR) run
 
+run-cxx-client:
+	$(MAKE) -C $(CXX_CLIENT_DIR) run
 
-
-DEBUG_BUILD := build_debug
-DEBUG_TARGET := gln_app_debug
-DEBUG_FLAGS := -g -O0 -DDEBUG
-
-debug: CFLAGS += $(DEBUG_FLAGS)
-debug: BUILD := $(DEBUG_BUILD)
-debug: OBJ := $(patsubst %.c, $(DEBUG_BUILD)/%.o, $(SRC))
-debug: $(DEBUG_TARGET)
-
-$(DEBUG_TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-$(DEBUG_BUILD)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@ 
-
-
-
-
-# ---- Cleanup ----
 clean:
-	rm -rf $(BUILD) $(TARGET)
+	$(MAKE) -C $(SERVER_DIR) clean
+	$(MAKE) -C $(C_CLIENT_DIR) clean
+	$(MAKE) -C $(CXX_CLIENT_DIR) clean
+	$(MAKE) -C $(LIBS_DIR) clean
 
-.PHONY: all clean
+.PHONY: all server-client c-client cxx-client clean

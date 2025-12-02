@@ -1,81 +1,63 @@
 # Compiler settings
-CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -I../../libs
-LDFLAGS = 
+CC := gcc
+CFLAGS := -std=c99 -Wall -Wextra -MMD -MP -g
+INCLUDES := -I../../libs
+LDFLAGS := -lcurl
 
-# Directories
-SRC_DIR   = .
-LIB_DIR   = ../../libs
-BUILD_DIR = ../build
+# Directory structure
+BUILD_DIR := build
+TARGET := $(BUILD_DIR)/server
 
 # Source files
-SRC_FILES = main.c TCPServer.c HTTPServer.c HTTPServerConnection.c Handlers/weather_handler.c Handlers/HTTPServerHandler.c Handlers/handler.c
-LIB_FILES = $(LIB_DIR)/TCPClient.c $(LIB_DIR)/smw.c
+SRC := $(wildcard *.c ../../libs/*.c)
 
-# Object files
-OBJ_FILES = $(BUILD_DIR)/TCPClient.o $(BUILD_DIR)/TCPServer.o $(BUILD_DIR)/HTTPServer.o  $(BUILD_DIR)/smw.o $(BUILD_DIR)/main.o $(BUILD_DIR)/HTTPServerConnection.o $(BUILD_DIR)/weather_handler.o $(BUILD_DIR)/HTTPServerHandler.o $(BUILD_DIR)/handler.o
+# Object and dependency files (in build/)
+OBJ := $(patsubst %.c,$(BUILD_DIR)/%.o,$(notdir $(SRC)))
+DEPS := $(OBJ:.o=.d)
 
-# Output binary
-TARGET = $(BUILD_DIR)/server_program
+# Ensure the build directory exists
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
 
 # Default target
-all: $(BUILD_DIR) $(TARGET)
+all: $(TARGET)
 
-# Add a debug build target
-CFLAGS_DEBUG = $(CFLAGS) -g -fsanitize=address -fno-omit-frame-pointer
-LDFLAGS_DEBUG = $(LDFLAGS) -fsanitize=address
+# Link executable
+$(TARGET): $(OBJ)
+	@echo "Linking $@..."
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+	@echo "Build complete!"
 
-debug: CFLAGS := $(CFLAGS_DEBUG)
-debug: LDFLAGS := $(LDFLAGS_DEBUG)
-debug: clean all
+# Compile server source files
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-valgrind: all
-	valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET)
+# Compile library source files
+$(BUILD_DIR)/%.o: ../../libs/%.c | $(BUILD_DIR)
+	@echo "Compiling library $<..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-# Link all object files
-$(TARGET): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS)
-	@echo "✅ Build complete: $(TARGET)"
-
-# Compile rules
-
-
-$(BUILD_DIR)/TCPClient.o: $(LIB_DIR)/TCPClient.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/TCPServer.o: $(SRC_DIR)/TCPServer.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/HTTPServer.o: $(SRC_DIR)/HTTPServer.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/HTTPServerConnection.o: $(SRC_DIR)/HTTPServerConnection.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/smw.o: $(LIB_DIR)/smw.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/weather_handler.o: $(SRC_DIR)/Handlers/weather_handler.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/HTTPServerHandler.o: $(SRC_DIR)/Handlers/HTTPServerHandler.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/handler.o: $(SRC_DIR)/Handlers/handler.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Create build directory if it doesn't exist
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
-# Cleanup
-clean:
-	rm -rf $(BUILD_DIR)/*
-	@echo "🧹 Cleaned up build files."
-
-# Optional: run the program
-run: all
+# Run the program
+run: $(TARGET)
+	@echo "Running server..."
 	./$(TARGET)
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build files..."
+	rm -rf $(BUILD_DIR)
+	@echo "Clean complete!"
+
+# Debug build
+debug: CFLAGS += -DDEBUG -O0 -ggdb3
+debug: $(TARGET)
+
+# Release build
+release: CFLAGS += -O2 -DNDEBUG
+release: $(TARGET)
+
+# Include dependency files
+-include $(DEPS)
+
+.PHONY: all clean run debug release
