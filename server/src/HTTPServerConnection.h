@@ -41,9 +41,6 @@ typedef struct
 
   HTTPServerConnection_State state;
 
-  char *method_url;
-  char *host;
-  char *url_path;
   char *url;
 
   char recv_buffer[2048];
