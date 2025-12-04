@@ -1,5 +1,6 @@
 #include "weather_handler.h"
 #include "../../glenns_metro/src/City.h"
+#include "../../libs/GEO_API.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +12,7 @@ char* Handle_Weather(void* _Context)
     char lat_temp[32];
     char lon_temp[32];
     char city_name[64];
-    char country_code[8];
+    char country_code[8] = {0};
     for(int i = 0; i < handler->parameters->pairsLength; i++)
     {
         if(strcmp(handler->parameters[i].key, "lat") == 0)
@@ -35,6 +36,7 @@ char* Handle_Weather(void* _Context)
             snprintf(country_code, sizeof(country_code), "%s", handler->parameters[i].value);
             country_code[sizeof(country_code)-1] = '\0';
         }
+        
     }
     City* city = NULL;
     City_Init(city_name, country_code, 0, 0, &city);
@@ -48,9 +50,13 @@ char* Handle_Weather(void* _Context)
     return weather_data;
 }
 
-char* Handle_UsersGET(void* _Context)
+char* Handle_GEO(void* _Context)
 {
-    printf("Users GET handler called\n");
+    GEO_API* geo = NULL;
+    GEO_Init(&geo, "Stockholm");
+    GEO_SendRequest(geo);
+    printf("response from GEO: %s\n", geo->result);
+    GEO_Dispose(&geo);
     return strdup("{\"users\":[{\"id\":1,\"name\":\"Alice\"},{\"id\":2,\"name\":\"Bob\"}]}");
 }
 

@@ -33,6 +33,7 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->tcp_server = tcp_server;
 
   HTTPServer_RegisterRoute("gwd", Handle_Weather);
+  HTTPServer_RegisterRoute("geo", Handle_GEO);
 
   Cities_Init(&http_server->cities);
 

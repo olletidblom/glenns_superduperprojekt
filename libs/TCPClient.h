@@ -28,6 +28,8 @@ ssize_t tcp_recieve(TCPClient* client, void* buffer, size_t len);
 
 int tcp_recieveAll(TCPClient* client, char** msg, uint64_t timeout);
 
+void tcp_disconnect(TCPClient* client);
+
 void tcp_dispose(TCPClient* client);
 
 #endif

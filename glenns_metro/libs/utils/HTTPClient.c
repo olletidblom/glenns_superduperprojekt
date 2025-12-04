@@ -95,7 +95,8 @@ json_t *HTTPClient_GetCords(HTTPClient *_Client, const char *_Name, const char *
     snprintf(url, sizeof(url), "https://geocoding-api.open-meteo.com/v1/search?name=%s&countryCode=%s", _Name, countryCode);
   else
     snprintf(url, sizeof(url), "https://geocoding-api.open-meteo.com/v1/search?name=%s", _Name);
-
+  
+  printf("Fetching URL: %s\n", url);
   curl_easy_setopt(
       curl, CURLOPT_URL,
       url); // https://api.open-Meteo.com/v1/forecast?latitude=52.52&longitude=13.41&hourly=temperature_2m

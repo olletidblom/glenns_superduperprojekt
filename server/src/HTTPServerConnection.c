@@ -32,6 +32,7 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
 
     HTTPServerConnection *_Connection = (HTTPServerConnection *)calloc(1, sizeof(HTTPServerConnection));
 
+
     _Connection->socket = socket;
     _Connection->is_active = is_active;
 
@@ -225,6 +226,11 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     if (connection == NULL)
         return;
 
+
+    //printf("HEllo!! %s\n"connection->http_client.buffer);
+    //HTTPClient_GET(&connection->http_client, "/api/v1/gwd?city=Stockholm&countryCode=SE", NULL);    
+    //connection->is_active = 1;
+   // return;
     switch (connection->state)
     {
     case HTTPServerConnection_State_Read_Make_URL:
@@ -339,5 +345,6 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     if (_server->task != NULL)
         smw_destroy_task(_server->task);
 
+    //HTTPClient_Dispose_s(&_server->http_client);
     free(_server);
 }

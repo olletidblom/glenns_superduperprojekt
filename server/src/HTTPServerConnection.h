@@ -4,6 +4,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
 #include "../../libs/smw.h"
+#include "../../libs/HTTPClient.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,6 +30,9 @@ typedef enum
 
 typedef struct
 {
+
+  HTTPClient_s http_client;
+
   smw_task *task;
 
   void *context;
