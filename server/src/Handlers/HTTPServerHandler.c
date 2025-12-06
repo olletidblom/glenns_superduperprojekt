@@ -152,7 +152,7 @@ RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url
     if(_ServerHandler == NULL || url == NULL)
     return NULL;
 
-    return HTTPServerHandler_Parse(_ServerHandler, url);;
+    return HTTPServerHandler_Parse(_ServerHandler, url);
 }
 
 void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler)

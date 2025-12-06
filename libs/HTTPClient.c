@@ -79,6 +79,10 @@ int HTTPClient_Initiate(HTTPClient_s *_Client)
 {
 
 	_Client = (HTTPClient_s *)malloc(sizeof(HTTPClient_s));
+
+	if (_Client == NULL)
+		return -1;
+
 	memset(_Client, 0, sizeof(HTTPClient_s));
 
 	_Client->buffer = NULL;

@@ -4,12 +4,15 @@
 #define _POSIX_C_SOURCE 200809L
 #include "../glenns_metro/libs/jansson/jansson.h"
 #include "HTTPClient.h"
+#include "curl.h"
 
 typedef struct
 {
     char *city_name;
     char *result;
     char* url;
+    char* file_path;
+    CurlResponse* response;
     HTTPClient_s http_client;
 } GEO_API;
 
