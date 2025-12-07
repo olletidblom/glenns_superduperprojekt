@@ -16,11 +16,11 @@ int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length);
 
 void HTTPServer_work(void *_Context, uint64_t monTime);
 
-void HTTPServer_RemoveConnection(HTTPServer *server, HTTPServerConnection *connection);
+
 void HTTPServer_Disconnect(HTTPServer *server);
 
 
-int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
+int wHTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 {
 
   HTTP_Status status;
@@ -98,16 +98,6 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
   //if(is_active == 1)
   //HTTPServer_Dispose(&server);
 
-}
-
-void HTTPServer_RemoveConnection(HTTPServer *server, HTTPServerConnection *connection)
-{
-    if (server == NULL || connection == NULL)
-    return;
-
-    printf("HTTPServer: Removing connection on socket %d\n", connection->socket);
-
-    HTTPServerConnection_Dispose(&connection);
 }
 
 

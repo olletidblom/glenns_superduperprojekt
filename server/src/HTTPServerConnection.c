@@ -13,8 +13,6 @@
 // Type alias for handler function pointer
 typedef char *(*HandlerFunc)(HTTPServerConnection *);
 
-// Forward declaration
-void HTTPServer_RemoveConnection(void *server, HTTPServerConnection *connection);
 
 int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_t length);
 int HTTPServerConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length);
@@ -22,7 +20,6 @@ int HTTPServerConnection_Write(HTTPServerConnection *connection, char *buffer, s
 void HTTPServerConnection_work(void *_Context, uint64_t monTime);
 
 void HTTPServerConnection_Cleanup(HTTPServerConnection *connection);
-void HTTPServerConnection_Disconnect(HTTPServerConnection *connection);
 
 int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context, int *is_active)
 {
@@ -54,7 +51,6 @@ int HTTPConnection_Write(HTTPServerConnection *connection, char *buffer, size_t 
 {
     ssize_t result = send(connection->socket, buffer, length, MSG_NOSIGNAL);
     // printf("send error %d: %s\n", errno, strerror(errno));
-    // scanf("%d", result);
     return result;
 }
 
@@ -201,6 +197,12 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
         if (bytesRead < 0)
         {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                return; // No data available right now
+            }
+            printf("Error reading from socket %d: %s\n", connection->socket, strerror(errno));
+            connection->state = HTTPServerConnection_State_Cleanup;
             return;
         }
 
