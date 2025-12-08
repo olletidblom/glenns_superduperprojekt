@@ -83,11 +83,9 @@ char *Handle_Weather(void *_Context)
     }
     
     char *result = strdup(geo->result);
-    printf("response from GEO: %s\n", geo->result);
-    printf("crash 6!! %p \n ", result);
+
     Meteo_Dispose(&geo);
     HTTPServerHandler_Dispose(&handler);
-    printf("crash 7!! %s\n ", result);
     return result;
 }
 
@@ -117,7 +115,6 @@ char *Handle_GEO(void *_Context)
         return strdup("{\"error\":\"Failed to get GEO data\"}");
     }
 
-    printf("response from GEO: %s\n", geo->result);
     char *result = strdup(geo->result);
 
 

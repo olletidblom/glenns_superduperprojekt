@@ -1,4 +1,4 @@
-#include "API.h"
+/*#include "API.h"
 #include "HTTP.h"
 #include "TCPClient.h"
 #include <stdio.h>
@@ -161,4 +161,4 @@ void API_free_json(char* json_data)
     if (json_data != NULL) {
         free(json_data);
     }
-}
+}*/

@@ -27,6 +27,8 @@ int GEO_Init(GEO_API **_GeoApiPtr, const char *city_name)
     geo_api->url = NULL;
     geo_api->file_path = NULL;
     geo_api->result = NULL;
+
+    
     //HTTPClient_Initiate(&geo_api->http_client);
 
 
@@ -204,8 +206,6 @@ void GEO_Dispose(GEO_API **_GeoApiPtr)
     if(geo_api->response != NULL)
         Curl_Dispose(&geo_api->response);
     // TODO:
-    // free url
-    // free file_path
     // Dispose http_client
     free(geo_api);
     *_GeoApiPtr = NULL;

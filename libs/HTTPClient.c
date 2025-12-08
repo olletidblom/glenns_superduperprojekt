@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 void HTTPClient_Work(void *_Context, uint64_t _MonTime)
 {
@@ -45,7 +46,7 @@ void HTTPClient_Work(void *_Context, uint64_t _MonTime)
 		size_t temp = 4096 - (client->bufferPtr - client->buffer);
 
 		ssize_t bytesRead = tcp_recieve(&client->tcp_client, client->bufferPtr, temp);
-		printf("in work function %d\n", temp);
+		printf("in work function %ld\n", temp);
 		if (bytesRead > 0)
 		{
 			client->bufferPtr += bytesRead;
@@ -93,18 +94,20 @@ int HTTPClient_Initiate(HTTPClient_s *_Client)
 
 int HTTPClient_GET(HTTPClient_s *_Client, const char *_URL, const char* host, void (*callback)(HTTPClient_s *_CLient, const char *_Event))
 {
-
+	_Client->callback = callback;
 	tcp_init(&_Client->tcp_client, host, 10180);
 
 	_Client->buffer = malloc(4096);
 	if (_Client->buffer == NULL)
 		return -1;
 
-	_Client->length = snprintf(_Client->buffer, 4096, "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: MyClient/1.0\r\nConnection: close\r\n\r\n", _URL, host);
+	_Client->length = snprintf((char*)_Client->buffer, 4096, "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: MyClient/1.0\r\nConnection: close\r\n\r\n", _URL, host);
 
 	_Client->bufferPtr = _Client->buffer;
 	_Client->state = HTTPClient_State_Connect;
 	_Client->task = smw_create_task(_Client, HTTPClient_Work);
+
+	return 0;
 }
 
 void HTTPClient_Dispose_s(HTTPClient_s *_Client)

@@ -1,4 +1,4 @@
-#ifndef HTTP_H
+/*#ifndef HTTP_H
 #define HTTP_H
 
 #define _POSIX_C_SOURCE 200809L
@@ -36,7 +36,7 @@ typedef struct
 }HTTP_Response;
 */
 
-typedef struct {
+/*typedef struct {
   smw_task *task;
   void (*callback)();
   void *context;
@@ -55,4 +55,4 @@ HTTPClient *HTTP_run(HTTP_Method method, void (*_Callback)());
 
 void HTTP_work(void *_Context, uint64_t monTime);
 
-#endif
+#endif*/

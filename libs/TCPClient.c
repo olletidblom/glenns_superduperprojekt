@@ -56,9 +56,8 @@ int tcp_connect(TCPClient *client)
             break;
         }
     }
-    printf("1234\n");
+
     freeaddrinfo(res);
-    printf("5678\n");
     if (sock < 0)
         return -3;
 

@@ -10,20 +10,22 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+
+
 int is_active = 0;
 int HTTPServer_OnConnect(void* _Context, int socket);
 int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length);
 
 void HTTPServer_work(void *_Context, uint64_t monTime);
 
-void HTTPServer_RemoveConnection(HTTPServer *server, HTTPServerConnection *connection);
-void HTTPServer_Disconnect(HTTPServer *server);
+
 
 
 int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 {
 
-  HTTP_Status status;
+  //HTTP_Status status;
   TCPServer* tcp_server = (TCPServer *)malloc(sizeof(TCPServer));
   HTTPServer *http_server = (HTTPServer *)malloc(sizeof(HTTPServer));
 
@@ -32,6 +34,7 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->method = method;
   http_server->tcp_server = tcp_server;
 
+  
   HTTPServer_RegisterRoute("gwd", Handle_Weather);
   HTTPServer_RegisterRoute("geo", Handle_GEO);
 
@@ -46,6 +49,8 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
 
 
 
+
+//Gets called every time a new connection is received
 int HTTPServer_OnConnect(void* _Context, int socket)
 {
   printf("HTTP Server: Connection received on socket %d\n", socket);
@@ -55,12 +60,12 @@ int HTTPServer_OnConnect(void* _Context, int socket)
     return -1;
 
   server->connection = NULL;
-  if( HTTPServerConnection_Initialize(&server->connection, socket, server, &is_active) < 0) // added , server
+  if( HTTPServerConnection_Initialize(&server->connection, socket, &is_active) < 0) // added , server
   {
     printf("Failed to initialize HTTP server connection\n");
     return -2;
   }
-  printf("HELLOHELLO %p\n", server->connection);
+
   HTTPServerHandler* handler = NULL;
 
   if(HTTPServerHandler_Initialize(&handler, server->connection, HTTPServer_FindRoute) < 0)
@@ -69,24 +74,8 @@ int HTTPServer_OnConnect(void* _Context, int socket)
     return -3;
   }
 
-
+  return 0;
 }
-
-int HTTPServer_Write(HTTPServer *server, char *buffer, size_t length)
-{
-  int result = tcpserver_send(server->tcp_server, (char *)buffer, length);
-
-  printf("message sent: %s\n", buffer);
-  return result;
-}
-
-int HTTPServer_Read(HTTPServer *server, uint8_t *buffer, size_t length)
-{
-  int result = tcpserver_recieve(server->tcp_server, buffer, length);
-
-  return result;
-}
-
 
 void HTTPServer_work(void *_Context, uint64_t monTime)
 {
@@ -95,28 +84,9 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
   if (server == NULL || server->connection == NULL)
     return;
 
-  if(is_active == 1)
-  HTTPServer_Dispose(&server);
+  //if(is_active == 1)
+  //HTTPServer_Dispose(&server);
 
-}
-
-void HTTPServer_RemoveConnection(HTTPServer *server, HTTPServerConnection *connection)
-{
-    if (server == NULL || connection == NULL)
-    return;
-
-    printf("HTTPServer: Removing connection on socket %d\n", connection->socket);
-
-    HTTPServerConnection_Dispose(&connection);
-}
-
-
-void HTTPServer_Disconnect(HTTPServer *server)
-{
-  if (server == NULL)
-    return;
-
-  //tcpserver_disconnect(server->tcp_server, server->tcp_server->client->client_socket);
 }
 
 void HTTPServer_Dispose(HTTPServer **server)

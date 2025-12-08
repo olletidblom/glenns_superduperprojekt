@@ -7,6 +7,10 @@
 #include "HTTPClient.h"
 #include "curl.h"
 
+
+
+
+
 typedef struct
 {
     char* latitude;

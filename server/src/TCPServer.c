@@ -13,15 +13,12 @@
 ssize_t tcpserver_recieve(TCPServer *server, void *buffer, size_t len)
 {
   int result = recv(server->client->client_socket, buffer, len, MSG_DONTWAIT);
-  // printf("send error %d: %s\n", errno, strerror(errno));
   return result;
 }
 
 ssize_t tcpserver_send(TCPServer *server, void *data, size_t len)
 {
   ssize_t result = send(server->client->client_socket, data, len, MSG_NOSIGNAL);
-  // printf("send error %d: %s\n", errno, strerror(errno));
-  // scanf("%d", result);
   return result;
 }
 
@@ -148,7 +145,6 @@ void tcpserver_disconnect(int socket)
 
   close(socket);
   socket = -1;
-  printf("Disconnected socket %d\n", socket);
 
 }
 

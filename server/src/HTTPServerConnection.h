@@ -8,7 +8,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef void* (*OnParse)(void* _Context, const char* path);
+typedef char* (*RouteFunction)(void* _Context);
+
+typedef RouteFunction* (*OnParse)(void* _Context, char* path);
 
 typedef char* (*OnProcess)(void* _Context);
 
@@ -55,7 +57,7 @@ typedef struct
   int status_code;
 }HTTPServerConnection;
 
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context, int* is_active);
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, int* is_active);
 
 int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection);
 

@@ -1,4 +1,4 @@
-#include "HTTP.h"
+/*#include "HTTP.h"
 #include "TCPClient.h"
 #include <errno.h>
 #include <netdb.h>
@@ -195,4 +195,4 @@ void HTTP_Dispose(HTTPClient **client) {
   free(_Client->HTTP_response);
   free(_Client);
   *client = NULL;
-}
+}*/

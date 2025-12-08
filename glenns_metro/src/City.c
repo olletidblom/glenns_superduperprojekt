@@ -75,6 +75,8 @@ int City_GetValue(City *_City, const char *_Name, float *_Value,
   if (_City == NULL || _Name == NULL)
     return -1;
 
+
+  _Unit[0] = '\0';
   json_t *weather = City_GetWeatherData(_City);
   if (weather == NULL)
   {
@@ -159,7 +161,7 @@ json_t *City_GetWeatherData(City *_City)
 {
   // printf("start of function, city name is %s\n", _City->name);
   // if city has weather data is cached
-  json_error_t error;
+  //json_error_t error;
 
   // Variables to use when comparing time
   char cache_filepath[256];
@@ -271,7 +273,7 @@ json_t *City_GetWeatherData(City *_City)
     return NULL;
   }
 
-  json_t *ret = json_incref(json);
+  //json_t *ret = json_incref(json);
   // Lägg till de tre attributen vi snackade om
 
   json_t *city_variables = json_object();

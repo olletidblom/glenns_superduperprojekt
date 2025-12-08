@@ -12,7 +12,7 @@ void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler);
 
 RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
 
-int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _OnParse)
+int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _RouteHandler)
 {
     
     HTTPServerHandler *handler = (HTTPServerHandler *)malloc(sizeof(HTTPServerHandler));
@@ -20,16 +20,13 @@ int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Cont
     if(handler == NULL)
     return -1;
 
+    handler->routeHandler = _RouteHandler;
 
-    printf("hello1\n");
-    handler->onParse = _OnParse;
-    printf("hello\n");
     handler->parameters = (HTTPInputParameters *)malloc(2 * sizeof(HTTPInputParameters));
 
     if(handler->parameters == NULL)
     return -2;
 
-    printf("hello2\n");
     handler->parameters->pairsLength = 0;
     handler->parameters->maxPairs = 2;
     handler->end_point = NULL;
@@ -84,11 +81,9 @@ int HTTPServerHandler_ParseInputParameters(HTTPServerHandler *_ServerHandler, ch
     if (param_start == NULL)
     return -2;
 
-    printf("Param_start = %s : url_cpy = %p : url_cpy_length = %d\n", param_start, url_cpy, strlen(url_cpy));
     param_start++;
 
     // TODO: Add error checks
-    printf("param_start: %s", param_start);
     char *first_param = strtok(param_start, "&");
     int i;
     for (i = 0; first_param != NULL; i++)
@@ -100,7 +95,6 @@ int HTTPServerHandler_ParseInputParameters(HTTPServerHandler *_ServerHandler, ch
             {
                 maxPairs *= 2;
                 HTTPInputParameters *temp = (HTTPInputParameters *)realloc(_ServerHandler->parameters, maxPairs * sizeof(HTTPInputParameters));
-                // TODO: Handle fail
                 if(temp == NULL)
                 return -3;
 
@@ -110,7 +104,6 @@ int HTTPServerHandler_ParseInputParameters(HTTPServerHandler *_ServerHandler, ch
             _ServerHandler->parameters[i].value = strndup(split + sizeof(char), strlen(split + sizeof(char)));
             pairsLength++;
             _ServerHandler->parameters->pairsLength = pairsLength;
-            printf("key: %s value: %s \n", _ServerHandler->parameters[i].key, _ServerHandler->parameters[i].value);
         }
         first_param = strtok(NULL, "&");
     }
@@ -127,22 +120,19 @@ RouteFunction HTTPServerHandler_Parse(HTTPServerHandler *_ServerHandler, char *u
 
     if(result != 0)
     {
-        printf("Parsing HTTPServerHandler with url: %d\n", result);
         HTTPServerHandler_Dispose(&_ServerHandler);
-        printf("crash %d\n", result);
         return NULL;
     }
-    //invalid here
-    printf("2\n");
-    RouteFunction function = _ServerHandler->onParse(_ServerHandler->end_point);
+
+    //retrieve the function pointer from the Handler
+    RouteFunction function = _ServerHandler->routeHandler(_ServerHandler->end_point);
 
     result = HTTPServerHandler_ParseInputParameters(_ServerHandler, url);
-    printf("1\n");
+
     if(result == 0)
     return function;
 
 
-    printf("freeingfds\n");
     HTTPServerHandler_Dispose(&_ServerHandler);
     return NULL;
 }
@@ -161,9 +151,6 @@ void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler)
         return;
 
     HTTPServerHandler *handler = *_ServerHandler;
-
-    //if(handler->end_point == NULL)
-   // printf("crash %s \n", handler->end_point);
 
     if (handler->end_point != NULL)
         free(handler->end_point);

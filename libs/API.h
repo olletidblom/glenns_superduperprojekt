@@ -1,4 +1,4 @@
-#ifndef API_H
+/*#ifndef API_H
 #define API_H
 
 #include "HTTP.h"
@@ -10,4 +10,4 @@ char* API_get_geocoding_json(const char* city_name, double latitude, double long
 void API_free_json(char* json_data);
 char* API_url_encode(const char* input);
 
-#endif
+#endif*/

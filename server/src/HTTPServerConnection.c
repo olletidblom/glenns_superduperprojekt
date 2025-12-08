@@ -10,28 +10,21 @@
 #include <unistd.h>
 #include <limits.h> //for INT_MAX at content-length check
 
-// Type alias for handler function pointer
-typedef char *(*HandlerFunc)(HTTPServerConnection *);
-
-// Forward declaration
-void HTTPServer_RemoveConnection(void *server, HTTPServerConnection *connection);
-
-int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_t length);
-int HTTPServerConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length);
 
 void HTTPServerConnection_work(void *_Context, uint64_t monTime);
 
 void HTTPServerConnection_Cleanup(HTTPServerConnection *connection);
 void HTTPServerConnection_Disconnect(HTTPServerConnection *connection);
 
-int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, void *server_context, int *is_active)
+
+//Every connection gets its own HTTPServerConnection struct
+int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, int *is_active)
 {
 
     if (connection == NULL)
         return -1;
 
     HTTPServerConnection *_Connection = (HTTPServerConnection *)calloc(1, sizeof(HTTPServerConnection));
-
 
     _Connection->socket = socket;
     _Connection->is_active = is_active;
@@ -53,12 +46,10 @@ int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_
 int HTTPConnection_Write(HTTPServerConnection *connection, char *buffer, size_t length)
 {
     ssize_t result = send(connection->socket, buffer, length, MSG_NOSIGNAL);
-    // printf("send error %d: %s\n", errno, strerror(errno));
-    // scanf("%d", result);
     return result;
 }
 
-int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)              // Returns: 0 on success, -1 on error, 1 if needs more data
+int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection) // Returns: 0 on success, -1 on error, 1 if needs more data
 {
     if (connection == NULL)
         return -1;
@@ -66,7 +57,7 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)          
     char *header_end = strstr(connection->recv_buffer, "\r\n\r\n");
     if (header_end == NULL)
     {
-    return 1; 
+        return 1;
     }
 
     size_t header_size = (header_end + 4) - connection->recv_buffer;
@@ -119,13 +110,13 @@ int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection)          
     return 0;
 }
 
-void HTTPServerConnection_SetCallback(void* _Connection, void *_Context, OnParse onHandle)
+//Gets called inside HTTPServerHandler_Initialize
+void HTTPServerConnection_SetCallback(void *_Connection, void *_Context, OnParse onHandle)
 {
-    HTTPServerConnection* connection = (HTTPServerConnection*)_Connection;
+    HTTPServerConnection *connection = (HTTPServerConnection *)_Connection;
     if (connection == NULL)
         return;
 
-    printf("pointer: %p\n", connection);
     connection->context = _Context;
     connection->handler_parse = onHandle;
 }
@@ -187,11 +178,6 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     if (connection == NULL)
         return;
 
-
-    //printf("HEllo!! %s\n"connection->http_client.buffer);
-    //HTTPClient_GET(&connection->http_client, "/api/v1/gwd?city=Stockholm&countryCode=SE", NULL);    
-    //connection->is_active = 1;
-   // return;
     switch (connection->state)
     {
     case HTTPServerConnection_State_Read_Make_URL:
@@ -212,17 +198,16 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         connection->recv_buffer_length += bytesRead;
         connection->recv_buffer[connection->recv_buffer_length] = '\0';
 
-        
         if (connection->url == NULL && connection->recv_buffer_length >= 18)
         {
             int parse_result = HTTPServerConnection_ParseHeader(connection);
-            
-            if (parse_result == 1) 
+
+            if (parse_result == 1)
             {
                 return;
             }
-            
-            if (parse_result < 0) 
+
+            if (parse_result < 0)
             {
                 printf("Failed to parse HTTP request (error %d)\n", parse_result);
                 connection->state = HTTPServerConnection_State_Cleanup;
@@ -230,6 +215,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
             }
         }
 
+        //handler_parse returns the function pointer to the correct handler based on the URL
         connection->handler_process = connection->handler_parse(connection->context, connection->url);
 
         if (connection->handler_process == NULL)
@@ -239,16 +225,14 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
             connection->state = HTTPServerConnection_State_Response;
             break;
         }
-        
+
         connection->state = HTTPServerConnection_State_Handlers;
     }
     break;
 
     case HTTPServerConnection_State_Handlers:
     {
-        printf("are we crashing here?\n");
         connection->response_body = connection->handler_process(connection->context);
-        printf("response!!! %s \n", connection->response_body);
         connection->state = HTTPServerConnection_State_Response;
     }
     break;
@@ -289,13 +273,11 @@ void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
 
     free(connection->response_body);
 
-    printf("Cleanup: Socket %d\n", connection->socket);
     tcpserver_disconnect(connection->socket);
 
     HTTPServerConnection_Dispose(&connection);
     *(connection->is_active) = 1;
 }
-
 
 void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
 {
@@ -307,6 +289,6 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     if (_server->task != NULL)
         smw_destroy_task(_server->task);
 
-    //HTTPClient_Dispose_s(&_server->http_client);
+    // HTTPClient_Dispose_s(&_server->http_client);
     free(_server);
 }

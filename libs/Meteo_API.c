@@ -94,8 +94,9 @@ int Meteo_CheckCache(Meteo_API *Meteo_api, HTTPServerHandler *handler)
                 }
             }
         }
-        return -2;
+        return -1;
     }
+    return -2;
 }
 
 int Meteo_CacheResponse(Meteo_API *Meteo_api)
@@ -140,10 +141,11 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, HTTPServerHandler *handler)
 
     int pos = 0;
     int written = 0;
-    printf("inside parseresponse!!!! \n");
+
+
+    //Compare requested parameters with available data
     for (int i = 0; i < handler->parameters->pairsLength; i++)
     {
-        printf("inside parseresponse!!!! %s\n", handler->parameters[i].key);
         json_object_foreach(Meteo_data, key, value)
         {
 
@@ -175,12 +177,10 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, HTTPServerHandler *handler)
         }
     }
 
-    printf("inside parseresponse!!!! %s\n", buffer);
     if(Meteo_api->result != NULL)
     free(Meteo_api->result);
 
     Meteo_api->result = strdup(buffer);
-    printf("fjdsiofsd %s", Meteo_api->result);
     json_decref(json);
     return 0;
 }
@@ -216,32 +216,21 @@ void Meteo_Dispose(Meteo_API **_MeteoApiPtr)
     if (Meteo_api->latitude != NULL)
         free(Meteo_api->latitude);
 
-
-    printf("crash 1!!!! \n");
     if (Meteo_api->longitude != NULL)
         free(Meteo_api->longitude);
 
-    printf("crash 2!!!! \n");
     if (Meteo_api->result != NULL)
         free(Meteo_api->result);
 
     if (Meteo_api->url != NULL)
         free(Meteo_api->url);
 
-
-    printf("crash 3!!!! \n");
     if (Meteo_api->file_path != NULL)
         free(Meteo_api->file_path);
 
-    printf("crash 4!!!! \n");
     if (Meteo_api->response != NULL)
         Curl_Dispose(&Meteo_api->response);
 
-    printf("crash 5!!!! \n");
-    // TODO:
-    // free url
-    // free file_path
-    // Dispose http_client
     free(Meteo_api);
     *_MeteoApiPtr = NULL;
 }
