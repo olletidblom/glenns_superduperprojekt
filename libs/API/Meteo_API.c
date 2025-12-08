@@ -1,6 +1,7 @@
 #include "Meteo_API.h"
 #include <stdlib.h>
-#include "../glenns_metro/libs/utils/md5.h"
+#include "../../glenns_metro/libs/utils/md5.h"
+#include "../../glenns_metro/libs/utils/utils.h"
 #include <sys/stat.h>
 #include <time.h>
 
@@ -34,6 +35,7 @@ int Meteo_Init(Meteo_API **_MeteoApiPtr, const char *latitude, const char *longi
     Meteo_api->url = NULL;
     Meteo_api->file_path = NULL;
     Meteo_api->result = NULL;
+    create_folder("cache");
     // HTTPClient_Initiate(&Meteo_api->http_client);
 
     *_MeteoApiPtr = Meteo_api;
@@ -143,7 +145,37 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, HTTPServerHandler *handler)
     int written = 0;
 
 
-    //Compare requested parameters with available data
+    //If no specifed parameters, return all data
+    json_object_foreach(Meteo_data, key, value)
+    {
+        if (handler->parameters->pairsLength == 2)
+        {
+
+            if (json_is_integer(value))
+            {
+
+                written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %lld\n", key, json_integer_value(value));
+            }
+            else if (json_is_string(value))
+            {
+
+                written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %s\n", key, json_string_value(value));
+            }
+            else if (json_is_real(value))
+            {
+
+                written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %.2f\n", key, json_real_value(value));
+            }
+
+            if (written < 0 || written >= sizeof(buffer) - pos)
+            {
+                written = sizeof(buffer) - 1;
+            }
+            pos += written;
+        }
+    }
+
+    // Compare requested parameters with available data
     for (int i = 0; i < handler->parameters->pairsLength; i++)
     {
         json_object_foreach(Meteo_data, key, value)
@@ -168,7 +200,7 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, HTTPServerHandler *handler)
                     written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %.2f\n", key, json_real_value(value));
                 }
 
-                if(written < 0 || written >= sizeof(buffer) - pos)
+                if (written < 0 || written >= sizeof(buffer) - pos)
                 {
                     written = sizeof(buffer) - 1;
                 }
@@ -177,8 +209,8 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, HTTPServerHandler *handler)
         }
     }
 
-    if(Meteo_api->result != NULL)
-    free(Meteo_api->result);
+    if (Meteo_api->result != NULL)
+        free(Meteo_api->result);
 
     Meteo_api->result = strdup(buffer);
     json_decref(json);
@@ -192,7 +224,7 @@ int Meteo_SendRequest(Meteo_API *Meteo_api, HTTPServerHandler *handler)
     {
         Meteo_api->response = Curl_HTTPGet(Meteo_api->url);
 
-        if(Meteo_api->response == NULL || Meteo_api->response->data == NULL)
+        if (Meteo_api->response == NULL || Meteo_api->response->data == NULL)
             return -1;
 
         Meteo_api->result = strdup(Meteo_api->response->data);

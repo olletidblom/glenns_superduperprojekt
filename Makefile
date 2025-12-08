@@ -8,10 +8,12 @@ CFLAGS  += -Iglenns_metro/includes \
            -Iglenns_metro/libs \
            -Iserver/src \
 		   -Ilibs \
+		   -Ilibs/API \
+		   -Ilibs/HTTP \
            -Iserver/Handlers 
 
 # ---- Find all source files recursively ----
-SRC := $(shell find glenns_metro server/src libs -name "*.c")
+SRC := $(shell find glenns_metro server/src libs libs/API libs/HTTP -name "*.c")
 
 # Convert .c → build/.../.o
 OBJ := $(patsubst %.c, $(BUILD)/%.o, $(SRC))

@@ -84,8 +84,8 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
   if (server == NULL || server->connection == NULL)
     return;
 
-  //if(is_active == 1)
-  //HTTPServer_Dispose(&server);
+  if(is_active == 1)
+  HTTPServer_Dispose(&server);
 
 }
 

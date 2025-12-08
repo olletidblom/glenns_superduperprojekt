@@ -10,7 +10,7 @@ weather_handler -> HTTPServerHandler_run();
 
 void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler);
 
-RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
+RouteFunction HTTPServerHandler_run(void* _Context, char *url);
 
 int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _RouteHandler)
 {
@@ -83,7 +83,6 @@ int HTTPServerHandler_ParseInputParameters(HTTPServerHandler *_ServerHandler, ch
 
     param_start++;
 
-    // TODO: Add error checks
     char *first_param = strtok(param_start, "&");
     int i;
     for (i = 0; first_param != NULL; i++)
@@ -137,8 +136,11 @@ RouteFunction HTTPServerHandler_Parse(HTTPServerHandler *_ServerHandler, char *u
     return NULL;
 }
 
-RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url)
+RouteFunction HTTPServerHandler_run(void* _Context, char *url)
 {
+
+    HTTPServerHandler *_ServerHandler = (HTTPServerHandler *)_Context;
+
     if(_ServerHandler == NULL || url == NULL)
     return NULL;
 

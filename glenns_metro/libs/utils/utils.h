@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
-static inline char* strdup(const char* str)
+static inline char* strdup_1(const char* str)
 {
 	char* copy = (char*)malloc(strlen(str) + 1);
 	if(copy == NULL)

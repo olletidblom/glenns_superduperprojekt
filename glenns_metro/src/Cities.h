@@ -2,6 +2,8 @@
 #ifndef _CITIES_H
 #define _CITIES_H
 
+
+#define _POSIX_C_SOURCE 200809L
 #include "utils/LinkedList.h"
 
 typedef struct Cities Cities;

@@ -27,7 +27,7 @@ typedef struct
 int HTTPServerHandler_Initialize(HTTPServerHandler **_ServerHandler, void* _Context, Handler _RouteHandler);
 
 //Parses the endpoint and input parameters from the URL, returns the corresponding RouteFunction
-RouteFunction HTTPServerHandler_run(HTTPServerHandler *_ServerHandler, char *url);
+RouteFunction HTTPServerHandler_run(void* _Context, char *url);
 
 void HTTPServerHandler_Dispose(HTTPServerHandler **_ServerHandler);
 

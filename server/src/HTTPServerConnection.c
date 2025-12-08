@@ -10,14 +10,20 @@
 #include <unistd.h>
 #include <limits.h> //for INT_MAX at content-length check
 
+#define RESPONSE_HEADER "HTTP/1.1 %d %s\r\n"                             \
+                        "Content-Length: %zu\r\n"                        \
+                        "Content-Type: application/json\r\n"             \
+                        "Access-Control-Allow-Origin: *\r\n"             \
+                        "Access-Control-Allow-Methods: GET, OPTIONS\r\n" \
+                        "Access-Control-Allow-Headers: Content-Type\r\n" \
+                        "\r\n"                                           \
+                        "%s"
 
 void HTTPServerConnection_work(void *_Context, uint64_t monTime);
 
-void HTTPServerConnection_Cleanup(HTTPServerConnection *connection);
-void HTTPServerConnection_Disconnect(HTTPServerConnection *connection);
+void HTTPServerConnection_Dispose(HTTPServerConnection **server);
 
-
-//Every connection gets its own HTTPServerConnection struct
+// Every connection gets its own HTTPServerConnection instance
 int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, int *is_active)
 {
 
@@ -26,12 +32,14 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
 
     HTTPServerConnection *_Connection = (HTTPServerConnection *)calloc(1, sizeof(HTTPServerConnection));
 
+    _Connection->http_request = (HTTPRequest){0};
+    _Connection->http_response = (HTTPResponse){0};
     _Connection->socket = socket;
     _Connection->is_active = is_active;
 
-    _Connection->status_code = 200;
+    _Connection->http_response.status_code = 200;
 
-    _Connection->state = HTTPServerConnection_State_Read_Make_URL;
+    _Connection->state = HTTPServerConnection_State_Read;
     _Connection->task = smw_create_task(_Connection, HTTPServerConnection_work);
     *connection = _Connection;
     return 0;
@@ -39,7 +47,6 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
 
 int HTTPConnection_Read(HTTPServerConnection *connection, uint8_t *buffer, size_t length)
 {
-    // printf("send error %d: %s\n", errno, strerror(errno));
     return recv(connection->socket, buffer, length, MSG_DONTWAIT);
 }
 
@@ -49,68 +56,31 @@ int HTTPConnection_Write(HTTPServerConnection *connection, char *buffer, size_t 
     return result;
 }
 
-int HTTPServerConnection_ParseHeader(HTTPServerConnection *connection) // Returns: 0 on success, -1 on error, 1 if needs more data
+int HTTPServerConnection_Read(HTTPServerConnection *connection)
 {
-    if (connection == NULL)
-        return -1;
+    int bytesRead = HTTPConnection_Read(connection, (uint8_t *)(connection->http_request.recv_buffer + connection->http_request.recv_buffer_length),
+                                        sizeof(connection->http_request.recv_buffer) - connection->http_request.recv_buffer_length - 1);
 
-    char *header_end = strstr(connection->recv_buffer, "\r\n\r\n");
-    if (header_end == NULL)
-    {
-        return 1;
-    }
-
-    size_t header_size = (header_end + 4) - connection->recv_buffer;
-    if (header_size > 1024)
-    {
-        printf("HTTPServerConnection_ParseHeader: Headers too large (buffer full)\n");
-        return -1;
-    }
-
-    char *check_ptr = connection->recv_buffer;
-    while (check_ptr < connection->recv_buffer + connection->recv_buffer_length)
-    {
-        if (*check_ptr == '\n')
-        {
-            if (check_ptr == connection->recv_buffer || *(check_ptr - 1) != '\r')
-            {
-                printf("HTTPServerConnection_ParseHeader: Invalid line ending (bare LF without CR)\n");
-                return -1;
-            }
-        }
-        check_ptr++;
-    }
-
-    if (strncmp(connection->recv_buffer, "GET ", 4) != 0 && strncmp(connection->recv_buffer, "OPTIONS ", 8) != 0)
-    {
-        printf("HTTPServerConnection_ParseHeader: Unsupported HTTP method\n");
-        return -1;
-    }
-
-    char *path_start = strchr(connection->recv_buffer, ' ');
-    if (path_start == NULL)
+    if (bytesRead < 0)
     {
         return -1;
     }
 
-    path_start++;
-    char *path_end = strchr(path_start, ' ');
-    if (path_end == NULL)
+    if (bytesRead == 0)
     {
-        return -1;
+        connection->state = HTTPServerConnection_State_Cleanup;
+        return -2;
     }
+    connection->http_request.recv_buffer_length += bytesRead;
+    connection->http_request.recv_buffer[connection->http_request.recv_buffer_length] = '\0';
 
-    connection->url = strndup(path_start, path_end - path_start);
-    if (connection->url == NULL)
-    {
-        printf("HTTPServerConnection_ParseHeader: Failed to copy url\n");
-        return -1;
-    }
+    if (connection->http_request.url != NULL && connection->http_request.recv_buffer_length < 18)
+        return -3;
 
     return 0;
 }
 
-//Gets called inside HTTPServerHandler_Initialize
+// Gets called inside HTTPServerHandler_Initialize
 void HTTPServerConnection_SetCallback(void *_Connection, void *_Context, OnParse onHandle)
 {
     HTTPServerConnection *connection = (HTTPServerConnection *)_Connection;
@@ -126,13 +96,9 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *bo
     if (connection == NULL)
         return -1;
 
-    if (connection->response_body != NULL)
+    if (connection->http_response.response_body != NULL)
     {
-        body = connection->response_body;
-    }
-    else if (connection->request_body != NULL)
-    {
-        body = connection->request_body;
+        body = connection->http_response.response_body;
     }
     else
     {
@@ -140,16 +106,16 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *bo
     }
 
     const char *status_text;
-    switch (connection->status_code)
+    switch (connection->http_response.status_code)
     {
     case 200:
-        status_text = "200 OK";
+        status_text = "OK";
         break;
     case 404:
-        status_text = "404 Not Found";
+        status_text = "Not Found";
         break;
     case 500:
-        status_text = "500 Internal Server Error";
+        status_text = "Internal Server Error";
         break;
     default:
         status_text = "Unknown";
@@ -157,16 +123,8 @@ int HTTPServerConnection_SendResponse(HTTPServerConnection *connection, char *bo
     }
 
     char response[2048];
-    int length = snprintf(response, sizeof(response),
-                          "HTTP/1.1 %d %s\r\n"
-                          "Content-Length: %zu\r\n"
-                          "Content-Type: application/json\r\n"
-                          "Access-Control-Allow-Origin: *\r\n"
-                          "Access-Control-Allow-Methods: GET, OPTIONS\r\n"
-                          "Access-Control-Allow-Headers: Content-Type\r\n"
-                          "\r\n"
-                          "%s",
-                          connection->status_code, status_text, strlen(body), body);
+    int length = snprintf(response, sizeof(response), RESPONSE_HEADER,
+                          connection->http_response.status_code, status_text, strlen(body), body);
 
     int result = HTTPConnection_Write(connection, response, length);
     return result;
@@ -180,59 +138,51 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
 
     switch (connection->state)
     {
-    case HTTPServerConnection_State_Read_Make_URL:
+    case HTTPServerConnection_State_Read:
     {
-        int bytesRead = HTTPConnection_Read(connection, (uint8_t *)(connection->recv_buffer + connection->recv_buffer_length),
-                                            sizeof(connection->recv_buffer) - connection->recv_buffer_length - 1);
-
-        if (bytesRead < 0)
+        if (HTTPServerConnection_Read(connection) == 0)
         {
-            return;
+            connection->state = HTTPServerConnection_State_Parse;
+            break;
         }
-
-        if (bytesRead == 0)
+        else
+            return;
+    }
+    break;
+    case HTTPServerConnection_State_Parse:
+    {
+        if (HTTPParser_ParseHeader(&connection->http_request) == 0)
+        {
+            connection->state = HTTPServerConnection_State_FindRoute;
+            break;
+        }
+        else
         {
             connection->state = HTTPServerConnection_State_Cleanup;
-            return;
+            break;
         }
-        connection->recv_buffer_length += bytesRead;
-        connection->recv_buffer[connection->recv_buffer_length] = '\0';
+    }
+    break;
 
-        if (connection->url == NULL && connection->recv_buffer_length >= 18)
-        {
-            int parse_result = HTTPServerConnection_ParseHeader(connection);
-
-            if (parse_result == 1)
-            {
-                return;
-            }
-
-            if (parse_result < 0)
-            {
-                printf("Failed to parse HTTP request (error %d)\n", parse_result);
-                connection->state = HTTPServerConnection_State_Cleanup;
-                return;
-            }
-        }
-
-        //handler_parse returns the function pointer to the correct handler based on the URL
-        connection->handler_process = connection->handler_parse(connection->context, connection->url);
+    case HTTPServerConnection_State_FindRoute:
+    {
+        // handler_parse returns the function pointer to the correct handler based on the endpoint from URL
+        connection->handler_process = connection->handler_parse(connection->context, connection->http_request.url);
 
         if (connection->handler_process == NULL)
         {
-            printf("No handler found: %s\n", connection->url);
-            connection->status_code = 404;
+            printf("No handler found: %s\n", connection->http_request.url);
+            connection->http_response.status_code = 404;
             connection->state = HTTPServerConnection_State_Response;
             break;
         }
-
         connection->state = HTTPServerConnection_State_Handlers;
     }
     break;
 
     case HTTPServerConnection_State_Handlers:
     {
-        connection->response_body = connection->handler_process(connection->context);
+        connection->http_response.response_body = connection->handler_process(connection->context);
         connection->state = HTTPServerConnection_State_Response;
     }
     break;
@@ -248,37 +198,13 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     case HTTPServerConnection_State_Cleanup:
     {
         printf("cleaned up!\n");
-        HTTPServerConnection_Cleanup(connection);
+        HTTPServerConnection_Dispose(&connection);
     }
     break;
     }
 }
 
-void HTTPServerConnection_Cleanup(HTTPServerConnection *connection)
-{
-
-    if (connection == NULL)
-        return;
-
-    if (connection->url != NULL)
-    {
-        free(connection->url);
-        connection->url = NULL;
-    }
-    if (connection->request_body != NULL)
-    {
-        free(connection->request_body);
-        connection->request_body = NULL;
-    }
-
-    free(connection->response_body);
-
-    tcpserver_disconnect(connection->socket);
-
-    HTTPServerConnection_Dispose(&connection);
-    *(connection->is_active) = 1;
-}
-
+//Anything malloced that is returned or created inside HTTPServerConnection_work gets freed here
 void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
 {
     if (connection == NULL || *connection == NULL)
@@ -287,8 +213,30 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     HTTPServerConnection *_server = *connection;
 
     if (_server->task != NULL)
+    {
         smw_destroy_task(_server->task);
+        _server->task = NULL;
+    }
+    if (_server->http_request.url != NULL)
+    {
+        free(_server->http_request.url);
+        _server->http_request.url = NULL;
+    }
+    if (_server->http_request.request_body != NULL)
+    {
+        free(_server->http_request.request_body);
+        _server->http_request.request_body = NULL;
+    }
+    if (_server->http_response.response_body != NULL)
+    {
+        free(_server->http_response.response_body);
+        _server->http_response.response_body = NULL;
+    }
+
+    tcpserver_disconnect(_server->socket);
 
     // HTTPClient_Dispose_s(&_server->http_client);
+    *(_server->is_active) = 1;
     free(_server);
+    _server = NULL;
 }

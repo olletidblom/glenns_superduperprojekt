@@ -2,10 +2,10 @@
 #define Meteo_API_H
 
 #define _POSIX_C_SOURCE 200809L
-#include "../glenns_metro/libs/jansson/jansson.h"
-#include "../server/src/Handlers/HTTPServerHandler.h"
-#include "HTTPClient.h"
-#include "curl.h"
+#include "../../glenns_metro/libs/jansson/jansson.h"
+#include "../../server/src/Handlers/HTTPServerHandler.h"
+#include "../HTTP/HTTPClient.h"
+#include "../curl.h"
 
 
 

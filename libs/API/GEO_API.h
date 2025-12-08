@@ -2,9 +2,9 @@
 #define GEO_API_H
 
 #define _POSIX_C_SOURCE 200809L
-#include "../glenns_metro/libs/jansson/jansson.h"
-#include "HTTPClient.h"
-#include "curl.h"
+#include "../../glenns_metro/libs/jansson/jansson.h"
+#include "../HTTP/HTTPClient.h"
+#include "../curl.h"
 
 typedef struct
 {

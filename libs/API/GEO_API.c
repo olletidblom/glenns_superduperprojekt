@@ -1,6 +1,8 @@
 #include "GEO_API.h"
 #include <stdlib.h>
-#include "../glenns_metro/libs/utils/md5.h"
+#include "../../glenns_metro/libs/utils/md5.h"
+#include "../../glenns_metro/libs/utils/utils.h"
+
 #include <sys/stat.h>
 
 
@@ -28,7 +30,7 @@ int GEO_Init(GEO_API **_GeoApiPtr, const char *city_name)
     geo_api->file_path = NULL;
     geo_api->result = NULL;
 
-    
+    create_folder("cache");
     //HTTPClient_Initiate(&geo_api->http_client);
 
 

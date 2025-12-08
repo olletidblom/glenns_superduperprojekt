@@ -30,7 +30,7 @@ int City_Init(const char *_Name, const char *countryCode, const char *_Latitude,
 
   memset(_City, 0, sizeof(City));
 
-  _City->name = strdup(_Name);
+  _City->name = strdup_1(_Name);
   if (_City->name == NULL)
   {
     printf("Failed to allocate memory for City name\n");
@@ -40,11 +40,11 @@ int City_Init(const char *_Name, const char *countryCode, const char *_Latitude,
 
   if (countryCode != NULL)
   {
-    _City->countryCode = strdup(countryCode);
+    _City->countryCode = strdup_1(countryCode);
   }
   else
   {
-    _City->countryCode = strdup("");
+    _City->countryCode = strdup_1("");
   }
 
   if (_City->countryCode == NULL)

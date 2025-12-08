@@ -1,7 +1,7 @@
 #include "weather_handler.h"
 #include "../../glenns_metro/src/City.h"
-#include "../../libs/GEO_API.h"
-#include "../../libs/Meteo_API.h"
+#include "../../libs/API/GEO_API.h"
+#include "../../libs/API/Meteo_API.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,17 +56,17 @@ char *Handle_Weather(void *_Context)
     HTTPServerHandler *handler = (HTTPServerHandler *)_Context;
     char lat_temp[32];
     char lon_temp[32];
-    for(int i = 0; i < handler->parameters->pairsLength; i++)
+    for (int i = 0; i < handler->parameters->pairsLength; i++)
     {
-        if(strcmp(handler->parameters[i].key, "lat") == 0)
+        if (strcmp(handler->parameters[i].key, "lat") == 0)
         {
             snprintf(lat_temp, sizeof(lat_temp), "%s", handler->parameters[i].value);
-            lat_temp[sizeof(lat_temp)-1] = '\0';
+            lat_temp[sizeof(lat_temp) - 1] = '\0';
         }
-        else if(strcmp(handler->parameters[i].key, "lon") == 0)
+        else if (strcmp(handler->parameters[i].key, "lon") == 0)
         {
             snprintf(lon_temp, sizeof(lon_temp), "%s", handler->parameters[i].value);
-            lon_temp[sizeof(lon_temp)-1] = '\0';
+            lon_temp[sizeof(lon_temp) - 1] = '\0';
         }
     }
 
@@ -74,14 +74,14 @@ char *Handle_Weather(void *_Context)
     Meteo_Init(&geo, lat_temp, lon_temp);
     int res = Meteo_SendRequest(geo, handler);
 
-    if(res != 0)
+    if (res != 0)
     {
         printf("Meteo_SendRequest failed with code: %d\n", res);
         Meteo_Dispose(&geo);
         HTTPServerHandler_Dispose(&handler);
         return strdup("{\"error\":\"Failed to get weather data\"}");
     }
-    
+
     char *result = strdup(geo->result);
 
     Meteo_Dispose(&geo);
@@ -94,12 +94,12 @@ char *Handle_GEO(void *_Context)
 
     HTTPServerHandler *handler = (HTTPServerHandler *)_Context;
     char city_name[64];
-    for(int i = 0; i < handler->parameters->pairsLength; i++)
+    for (int i = 0; i < handler->parameters->pairsLength; i++)
     {
-        if(strcmp(handler->parameters[i].key, "city") == 0)
+        if (strcmp(handler->parameters[i].key, "city") == 0)
         {
             snprintf(city_name, sizeof(city_name), "%s", handler->parameters[i].value);
-            city_name[sizeof(city_name)-1] = '\0';
+            city_name[sizeof(city_name) - 1] = '\0';
         }
     }
 
@@ -107,7 +107,7 @@ char *Handle_GEO(void *_Context)
     GEO_Init(&geo, city_name);
     int res = GEO_SendRequest(geo);
 
-    if(res != 0)
+    if (res != 0)
     {
         printf("GEO_SendRequest failed with code: %d\n", res);
         GEO_Dispose(&geo);
@@ -116,7 +116,6 @@ char *Handle_GEO(void *_Context)
     }
 
     char *result = strdup(geo->result);
-
 
     GEO_Dispose(&geo);
     HTTPServerHandler_Dispose(&handler);
