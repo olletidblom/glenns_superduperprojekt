@@ -1,5 +1,5 @@
 
-#include "handler.h"
+#include "RouteHandler.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,7 +9,7 @@
 static Route routes[MAX_ROUTES];
 static size_t route_count = 0;
 
-void HTTPServer_RegisterRoute(const char *end_point, RequestHandler handler)
+void RouteHandler_Init(const char *end_point, RouteFunction handler)
 {
     if (route_count >= MAX_ROUTES)
         return;
@@ -21,7 +21,7 @@ void HTTPServer_RegisterRoute(const char *end_point, RequestHandler handler)
     return;
 }
 
-RequestHandler HTTPServer_FindRoute(const char *end_point)
+RouteFunction RouteHandler_FindRoute(const char *end_point)
 {
     for (size_t i = 0; i < route_count; i++)
     {
@@ -31,7 +31,7 @@ RequestHandler HTTPServer_FindRoute(const char *end_point)
 
         if (strcmp(r->path, end_point) == 0)
         {
-            RequestHandler temp = r->handler;
+            RouteFunction temp = r->handler;
             return r->handler;
         }
     }
@@ -39,7 +39,7 @@ RequestHandler HTTPServer_FindRoute(const char *end_point)
     return NULL;
 }
 
-void HTTPServer_RouteCleanup()
+void RouteHandler_Dispose()
 {
     for(size_t i = 0; i < route_count; i++)
     {

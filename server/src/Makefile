@@ -1,6 +1,6 @@
 # Compiler settings
 CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -I../../libs
+CFLAGS  = -Wall -Wextra -std=c11 -ggdb3 -I../../libs
 LDFLAGS = 
 
 # Directories

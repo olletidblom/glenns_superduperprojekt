@@ -136,7 +136,6 @@ void tcpserver_work(void* _Context, uint64_t monTime)
   if (server == NULL)
     return;
 
-  // Accept new connections
   tcpserver_accept(server);
 }
 

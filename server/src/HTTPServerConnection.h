@@ -4,36 +4,35 @@
 #define _POSIX_C_SOURCE 200809L
 #include "TCPServer.h"
 #include "../../libs/smw.h"
-#include "../../libs/HTTP/HTTPClient.h"
-#include "../../libs/HTTP/HTTPParser.h"
+#include "utils/HTTPRequest.h"
+#include "utils/HTTPResponse.h"
+#include "Handlers/URLHandler.h"
 #include <stddef.h>
 #include <stdint.h>
 
 //Function pointer for handlers
 typedef char *(*RouteFunction)(void *_Context);
 
-typedef RouteFunction (*OnParse)(void *_Context, char *path);
+typedef void (*Callback)(void *_Context);
 
 
 typedef enum
 {
   HTTPServerConnection_State_Read, //Reads data from socket
   HTTPServerConnection_State_Parse, //Parse HTTP header
+  HTTPServerConnection_State_ParseURL, //Parse URL to get endpoint and input parameters
   HTTPServerConnection_State_FindRoute, //Finds route based on endpoint, returns function pointer
   HTTPServerConnection_State_Handlers, //Calls function pointer returned by FindRoute
-  HTTPServerConnection_State_Response, //Sends respose to client
+  HTTPServerConnection_State_FormatResponse, //Formats response
+  HTTPServerConnection_State_SendResponse, //Sends respose to client
   HTTPServerConnection_State_Cleanup, //Disposes the connection, frees memory
 } HTTPServerConnection_State;
 
-typedef struct{
-  int status_code;
-  char* response_body;
-}HTTPResponse;
 
 typedef struct
 {
 
-  HTTPClient_s http_client;
+  URLHandler* url_handler;
 
   smw_task *task;
 
@@ -43,18 +42,17 @@ typedef struct
 
   HTTPServerConnection_State state;
 
-  HTTPRequest http_request; // Define in HTTPParser.h
+  HTTPRequest http_request; 
   HTTPResponse http_response;
 
   int *is_active;
-
-  OnParse handler_parse;
-  RouteFunction handler_process; 
+  Callback connection_callback;
+  RouteFunction handler; 
 } HTTPServerConnection;
 
 int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socket, int *is_active);
 
-void HTTPServerConnection_SetCallback(void *_Connection, void *_Context, OnParse onHandle);
+void HTTPServerConnection_SetCallback(void *_Connection, void *_Context, Callback _Callback);
 
 //This function is called internally, HTTPServerConnection disposes itself
 void HTTPServerConnection_Dispose(HTTPServerConnection **server);

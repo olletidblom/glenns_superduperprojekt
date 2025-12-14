@@ -1,6 +1,6 @@
 #include "HTTPServer.h"
-#include "Handlers/handler.h"
-#include "Handlers/weather_handler.h"
+#include "Handlers/RouteHandler.h"
+#include "Handlers/WeatherHandler.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdint.h>
@@ -35,8 +35,8 @@ int HTTPServer_Initialize(HTTP_Method method, HTTPServer **server)
   http_server->tcp_server = tcp_server;
 
   
-  HTTPServer_RegisterRoute("gwd", Handle_Weather);
-  HTTPServer_RegisterRoute("geo", Handle_GEO);
+  RouteHandler_Init("gwd", Handle_Weather);
+  RouteHandler_Init("geo", Handle_GEO);
 
   Cities_Init(&http_server->cities);
 
@@ -66,14 +66,6 @@ int HTTPServer_OnConnect(void* _Context, int socket)
     return -2;
   }
 
-  HTTPServerHandler* handler = NULL;
-
-  if(HTTPServerHandler_Initialize(&handler, server->connection, HTTPServer_FindRoute) < 0)
-  {
-    printf("Failed to initialize handler\n");
-    return -3;
-  }
-
   return 0;
 }
 
@@ -84,8 +76,8 @@ void HTTPServer_work(void *_Context, uint64_t monTime)
   if (server == NULL || server->connection == NULL)
     return;
 
-  if(is_active == 1)
-  HTTPServer_Dispose(&server);
+  //if(is_active == 1)
+  //HTTPServer_Dispose(&server);
 
 }
 
@@ -102,7 +94,7 @@ void HTTPServer_Dispose(HTTPServer **server)
   
 
   Cities_Dispose(&_server->cities);
-  HTTPServer_RouteCleanup();
+  RouteHandler_Dispose();
   tcpserver_dispose(_server->tcp_server);
   free(_server);
   *server = NULL;

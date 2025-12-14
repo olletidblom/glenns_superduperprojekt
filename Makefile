@@ -10,6 +10,7 @@ CFLAGS  += -Iglenns_metro/includes \
 		   -Ilibs \
 		   -Ilibs/API \
 		   -Ilibs/HTTP \
+		   -Iserver/src/utils \
            -Iserver/Handlers 
 
 # ---- Find all source files recursively ----

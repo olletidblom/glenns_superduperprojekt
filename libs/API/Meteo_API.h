@@ -3,7 +3,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include "../../glenns_metro/libs/jansson/jansson.h"
-#include "../../server/src/Handlers/HTTPServerHandler.h"
+#include "../../server/src/Handlers/URLHandler.h"
 #include "../HTTP/HTTPClient.h"
 #include "../curl.h"
 
@@ -18,13 +18,14 @@ typedef struct
     char *result;
     char* url;
     char* file_path;
+    char* data;
     CurlResponse* response;
     HTTPClient_s http_client;
 } Meteo_API;
 
 int Meteo_Init(Meteo_API **_MeteoApiPtr, const char* latitude, const char* longitude);
 
-int Meteo_SendRequest(Meteo_API *Meteo_api, HTTPServerHandler* handler);
+int Meteo_SendRequest(Meteo_API *Meteo_api, URLHandler* handler);
 
 void Meteo_Dispose(Meteo_API **_MeteoApiPtr);
 
