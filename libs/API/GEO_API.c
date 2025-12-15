@@ -149,7 +149,6 @@ int GEO_CacheResponse(GEO_API *geo_api)
 int GEO_ParseResponse(GEO_API *geo_api)
 {
 
-    char buffer[2048] = {0};
     if (geo_api == NULL || geo_api->response_data == NULL)
         return -1;
 
@@ -160,15 +159,11 @@ int GEO_ParseResponse(GEO_API *geo_api)
     }
 
     json_t *geo_data = json_object_get(json, "results");
-    size_t array_size = json_array_size(geo_data);
 
-    const char *key, *skey;
+    const char *key;
     json_t *value, *values;
 
     json_t *response = json_array();
-
-    int pos = 0;
-    int written = 0;
 
     size_t i;
 

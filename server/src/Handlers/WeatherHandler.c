@@ -30,7 +30,7 @@ char *Handle_Weather(void *_Context)
         return strdup("{\"error\":\"Failed to get weather data\"}");
     }
 
-    char *result = strdup(geo->result);
+    char *result = strdup(geo->parsed_response);
 
     Meteo_Dispose(&geo);
 
@@ -62,15 +62,8 @@ char *Handle_GEO(void *_Context)
         return strdup("{\"error\":\"Failed to get GEO data\"}");
     }
 
-    char *result = strdup(geo->result);
+    char *result = strdup(geo->parsed_response);
     GEO_Dispose(&geo);
 
     return result;
-}
-
-char *Handle_UsersPOST(void *_Context)
-{
-
-    // Here you would normally process conn->request_body
-    return strdup("{\"status\":\"User created successfully\"}");
 }

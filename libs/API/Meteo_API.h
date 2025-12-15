@@ -15,11 +15,11 @@ typedef struct
 {
     char* latitude;
     char* longitude;
-    char *result;
+    char *parsed_response;
     char* url;
     char* file_path;
-    char* data;
-    CurlResponse* response;
+    char* response_data;
+    CurlResponse* curl_response;
     HTTPClient_s http_client;
 } Meteo_API;
 

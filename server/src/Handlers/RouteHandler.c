@@ -31,7 +31,6 @@ RouteFunction RouteHandler_FindRoute(const char *end_point)
 
         if (strcmp(r->path, end_point) == 0)
         {
-            RouteFunction temp = r->handler;
             return r->handler;
         }
     }

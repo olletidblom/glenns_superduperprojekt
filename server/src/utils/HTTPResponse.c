@@ -18,11 +18,16 @@
 
 int HTTPResponse_Initialize(HTTPResponse *http_response)
 {
+    if (http_response == NULL)
+        return -1;
 
     http_response->status_code = 200;
     http_response->response_ptr = NULL;
     http_response->response_length = 0;
     http_response->response = NULL;
+    http_response->response_formatted = NULL;
+
+    return 0;
 }
 
 int HTTPResponse_Format(HTTPResponse *http_response)
@@ -81,6 +86,8 @@ int HTTPResponse_Send(int socket, HTTPResponse* http_response)
     {
         return 1;
     }
+
+    return 1;
 }
 
 void HTTPResponse_Dispose(HTTPResponse *http_response)

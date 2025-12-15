@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 
 int HTTPRequest_Initialize(HTTPRequest* http_request)
@@ -14,6 +16,9 @@ int HTTPRequest_Initialize(HTTPRequest* http_request)
     http_request->recv_buffer[0] = '\0';
     http_request->url = NULL;
     http_request->request_body = NULL;
+    http_request->recv_buffer_length = 0;
+
+    return 0;
 }
 
 

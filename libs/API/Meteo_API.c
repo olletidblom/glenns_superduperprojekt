@@ -31,10 +31,11 @@ int Meteo_Init(Meteo_API **_MeteoApiPtr, const char *latitude, const char *longi
         return -3;
     }
 
-    Meteo_api->response = NULL;
+    Meteo_api->curl_response = NULL;
     Meteo_api->url = NULL;
     Meteo_api->file_path = NULL;
-    Meteo_api->result = NULL;
+    Meteo_api->parsed_response = NULL;
+    Meteo_api->response_data = NULL;
     create_folder("cache");
     // HTTPClient_Initiate(&Meteo_api->http_client);
 
@@ -87,8 +88,8 @@ int Meteo_CheckCache(Meteo_API *Meteo_api, URLHandler *handler)
             }
             else
             {
-                Meteo_api->data = json_dumps(json, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
-                if (Meteo_api->data != NULL)
+                Meteo_api->response_data = json_dumps(json, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
+                if (Meteo_api->response_data != NULL)
                 {
                     Meteo_ParseResponse(Meteo_api, handler);
                     json_decref(json);
@@ -103,10 +104,10 @@ int Meteo_CheckCache(Meteo_API *Meteo_api, URLHandler *handler)
 
 int Meteo_CacheResponse(Meteo_API *Meteo_api)
 {
-    if (Meteo_api == NULL || Meteo_api->data == NULL)
+    if (Meteo_api == NULL || Meteo_api->response_data == NULL)
         return -1;
 
-    json_t *json = json_loads(Meteo_api->data, 0, NULL);
+    json_t *json = json_loads(Meteo_api->response_data, 0, NULL);
     if (json == NULL)
     {
         return -2;
@@ -127,11 +128,10 @@ int Meteo_CacheResponse(Meteo_API *Meteo_api)
 int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
 {
 
-    char buffer[4096] = {0};
-    if (Meteo_api == NULL || Meteo_api->data == NULL)
+    if (Meteo_api == NULL || Meteo_api->response_data == NULL)
         return -1;
 
-    json_t *json = json_loads(Meteo_api->data, 0, NULL);
+    json_t *json = json_loads(Meteo_api->response_data, 0, NULL);
     if (json == NULL)
     {
         return -2;
@@ -143,8 +143,6 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
 
     json_t* response = json_object();
 
-    int pos = 0;
-    int written = 0;
 
     // If no specifed parameters, return all data
     json_object_foreach(Meteo_data, key, value)
@@ -168,11 +166,6 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
                 json_object_set_new(response, key, json_real(json_real_value(value)));
             }
 
-            if (written < 0 || written >= sizeof(buffer) - pos)
-            {
-                written = sizeof(buffer) - 1;
-            }
-            pos += written;
         }
     }
 
@@ -201,16 +194,11 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
                     json_object_set_new(response, key, json_real(json_real_value(value)));
                 }
 
-                if (written < 0 || written >= sizeof(buffer) - pos)
-                {
-                    written = sizeof(buffer) - 1;
-                }
-                pos += written;
             }
         }
     }
 
-    Meteo_api->result = strdup(json_dumps(response, JSON_INDENT(4) | JSON_PRESERVE_ORDER));
+    Meteo_api->parsed_response = json_dumps(response, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
     json_decref(response);
     json_decref(json);
     json_decref(Meteo_data);
@@ -231,18 +219,18 @@ int Meteo_SendRequest(Meteo_API *Meteo_api, URLHandler *handler)
         return 0;
     }
 
-    Meteo_api->response = Curl_HTTPGet(Meteo_api->url);
+    Meteo_api->curl_response = Curl_HTTPGet(Meteo_api->url);
 
-    if (Meteo_api->response == NULL || Meteo_api->response->data == NULL)
+    if (Meteo_api->curl_response == NULL || Meteo_api->curl_response->data == NULL)
         return -1;
 
-    Meteo_api->data = strdup(Meteo_api->response->data);
+    Meteo_api->response_data = strdup(Meteo_api->curl_response->data);
 
     Meteo_CacheResponse(Meteo_api);
 
     Meteo_ParseResponse(Meteo_api, handler);
 
-    if (Meteo_api->data == NULL)
+    if (Meteo_api->response_data == NULL)
         return -2;
 
     return 0;
@@ -261,11 +249,11 @@ void Meteo_Dispose(Meteo_API **_MeteoApiPtr)
     if (Meteo_api->longitude != NULL)
         free(Meteo_api->longitude);
 
-    if (Meteo_api->data != NULL)
-        free(Meteo_api->data);
+    if (Meteo_api->response_data != NULL)
+        free(Meteo_api->response_data);
 
-    if (Meteo_api->result != NULL)
-        free(Meteo_api->result);
+    if (Meteo_api->parsed_response != NULL)
+        free(Meteo_api->parsed_response);
 
     if (Meteo_api->url != NULL)
         free(Meteo_api->url);
@@ -273,8 +261,8 @@ void Meteo_Dispose(Meteo_API **_MeteoApiPtr)
     if (Meteo_api->file_path != NULL)
         free(Meteo_api->file_path);
 
-    if (Meteo_api->response != NULL)
-        Curl_Dispose(&Meteo_api->response);
+    if (Meteo_api->curl_response != NULL)
+        Curl_Dispose(&Meteo_api->curl_response);
 
     free(Meteo_api);
     *_MeteoApiPtr = NULL;

@@ -109,7 +109,7 @@ void Cities_AddFromCache(Cities* _Cities)
 			const char* ext = strrchr(file.name, '.');
 			if (ext != NULL && strcmp(ext, ".json") == 0)
 			{
-				char filepath[256];
+				char filepath[512];
 				snprintf(filepath, sizeof(filepath), "cities/%s", file.name);
 
 				json_error_t error;
