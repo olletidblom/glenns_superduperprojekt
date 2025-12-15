@@ -192,7 +192,6 @@ int GEO_ParseResponse(GEO_API *geo_api)
         }
 
         json_array_append_new(response, temp);
-        json_decref(temp);
     }
 
     geo_api->parsed_response = json_dumps(response, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
