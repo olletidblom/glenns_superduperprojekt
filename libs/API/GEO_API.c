@@ -23,10 +23,11 @@ int GEO_Init(GEO_API **_GeoApiPtr, const char *city_name)
         return -3;
     }
 
-    geo_api->response = NULL;
+    geo_api->curl_response = NULL;
     geo_api->url = NULL;
     geo_api->file_path = NULL;
-    geo_api->result = NULL;
+    geo_api->parsed_response = NULL;
+    geo_api->response_data = NULL;
 
     create_folder("cache");
     // HTTPClient_Initiate(&geo_api->http_client);
@@ -75,8 +76,8 @@ int GEO_CheckCache(GEO_API *geo_api)
         }
         else
         {
-            geo_api->result = json_dumps(json, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
-            if (geo_api->result != NULL)
+            geo_api->response_data = json_dumps(json, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
+            if (geo_api->response_data != NULL)
             {
                 GEO_ParseResponse(geo_api);
                 json_decref(json);
@@ -89,10 +90,10 @@ int GEO_CheckCache(GEO_API *geo_api)
 
 int GEO_CacheResponse(GEO_API *geo_api)
 {
-    if (geo_api == NULL || geo_api->city_name == NULL || geo_api->result == NULL)
+    if (geo_api == NULL || geo_api->city_name == NULL || geo_api->response_data == NULL)
         return -1;
 
-    json_t *json = json_loads(geo_api->result, 0, NULL);
+    json_t *json = json_loads(geo_api->response_data, 0, NULL);
     if (json == NULL)
     {
         return -2;
@@ -149,10 +150,10 @@ int GEO_ParseResponse(GEO_API *geo_api)
 {
 
     char buffer[2048] = {0};
-    if (geo_api == NULL || geo_api->result == NULL)
+    if (geo_api == NULL || geo_api->response_data == NULL)
         return -1;
 
-    json_t *json = json_loads(geo_api->result, 0, NULL);
+    json_t *json = json_loads(geo_api->response_data, 0, NULL);
     if (json == NULL)
     {
         return -2;
@@ -160,29 +161,49 @@ int GEO_ParseResponse(GEO_API *geo_api)
 
     json_t *geo_data = json_object_get(json, "results");
     size_t array_size = json_array_size(geo_data);
+
+    const char *key, *skey;
+    json_t *value, *values;
+
+    json_t *response = json_array();
+
     int pos = 0;
     int written = 0;
-    for (size_t i = 0; i < array_size; i++)
+
+    size_t i;
+
+    json_array_foreach(geo_data, i, values)
     {
-        json_t *result = json_array_get(geo_data, i);
-        json_t *name = json_object_get(result, "name");
-        json_t *latitude = json_object_get(result, "latitude");
-        json_t *longitude = json_object_get(result, "longitude");
-
-        written = snprintf(buffer + pos, sizeof(buffer) - pos, "Result %zu: %s (Lat: %.6f, Lon: %.6f)\n", i + 1, json_string_value(name), json_number_value(latitude), json_number_value(longitude));
-
-        if (written < 0 || written >= sizeof(buffer) - pos)
+        json_t *temp = json_object();
+        json_object_foreach(values, key, value)
         {
-            written = sizeof(buffer) - 1;
+            if (strcmp(key, "latitude") == 0 || strcmp(key, "longitude") == 0 || strcmp(key, "name") == 0 || strcmp(key, "country_code") == 0)
+            {
+                if (json_is_integer(value))
+                {
+                    json_object_set_new(temp, key, json_integer(json_integer_value(value)));
+                }
+                else if (json_is_string(value))
+                {
+
+                    json_object_set_new(temp, key, json_string(json_string_value(value)));
+                }
+                else if (json_is_real(value))
+                {
+
+                    json_object_set_new(temp, key, json_real(json_real_value(value)));
+                }
+            }
         }
-        pos += written;
+
+        json_array_append_new(response, temp);
+        json_decref(temp);
     }
 
-    free(geo_api->result);
-    geo_api->result = strdup(buffer);
-
+    geo_api->parsed_response = json_dumps(response, JSON_INDENT(4) | JSON_PRESERVE_ORDER);
+    printf("Parsed GEO API Response:\n%s\n", geo_api->parsed_response);
+    json_decref(response);
     json_decref(json);
-    //json_decref(geo_data);
     return 0;
 }
 
@@ -200,18 +221,18 @@ int GEO_SendRequest(GEO_API *geo_api)
         return 0;
     }
 
-    geo_api->response = Curl_HTTPGet(geo_api->url);
+    geo_api->curl_response = Curl_HTTPGet(geo_api->url);
 
-    if (geo_api->response == NULL || geo_api->response->data == NULL)
+    if (geo_api->curl_response == NULL || geo_api->curl_response->data == NULL)
         return -1;
 
-    geo_api->result = strdup(geo_api->response->data);
+    geo_api->response_data = strdup(geo_api->curl_response->data);
 
     GEO_CacheResponse(geo_api);
 
     GEO_ParseResponse(geo_api);
 
-    if (geo_api->result == NULL)
+    if (geo_api->response_data == NULL)
         return -2;
 
     return 0;
@@ -227,8 +248,11 @@ void GEO_Dispose(GEO_API **_GeoApiPtr)
     if (geo_api->city_name != NULL)
         free(geo_api->city_name);
 
-    if (geo_api->result != NULL)
-        free(geo_api->result);
+    if (geo_api->parsed_response != NULL)
+        free(geo_api->parsed_response);
+
+    if (geo_api->response_data != NULL)
+        free(geo_api->response_data);
 
     if (geo_api->url != NULL)
         free(geo_api->url);
@@ -236,8 +260,8 @@ void GEO_Dispose(GEO_API **_GeoApiPtr)
     if (geo_api->file_path != NULL)
         free(geo_api->file_path);
 
-    if (geo_api->response != NULL)
-        Curl_Dispose(&geo_api->response);
+    if (geo_api->curl_response != NULL)
+        Curl_Dispose(&geo_api->curl_response);
     // TODO:
     // Dispose http_client
     free(geo_api);

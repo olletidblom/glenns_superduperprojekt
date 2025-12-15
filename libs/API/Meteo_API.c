@@ -141,6 +141,8 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
     const char *key;
     json_t *value;
 
+    json_t* response = json_object();
+
     int pos = 0;
     int written = 0;
 
@@ -153,17 +155,17 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
             if (json_is_integer(value))
             {
 
-                written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %lld\n", key, json_integer_value(value));
+                json_object_set_new(response, key, json_integer(json_integer_value(value)));
             }
             else if (json_is_string(value))
             {
 
-                written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %s\n", key, json_string_value(value));
+                json_object_set_new(response, key, json_string(json_string_value(value)));
             }
             else if (json_is_real(value))
             {
 
-                written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %.2f\n", key, json_real_value(value));
+                json_object_set_new(response, key, json_real(json_real_value(value)));
             }
 
             if (written < 0 || written >= sizeof(buffer) - pos)
@@ -186,17 +188,17 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
                 if (json_is_integer(value))
                 {
 
-                    written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %lld\n", key, json_integer_value(value));
+                    json_object_set_new(response, key, json_integer(json_integer_value(value)));
                 }
                 else if (json_is_string(value))
                 {
 
-                    written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %s\n", key, json_string_value(value));
+                    json_object_set_new(response, key, json_string(json_string_value(value)));
                 }
                 else if (json_is_real(value))
                 {
 
-                    written = snprintf(buffer + pos, sizeof(buffer) - pos, "%s: %.2f\n", key, json_real_value(value));
+                    json_object_set_new(response, key, json_real(json_real_value(value)));
                 }
 
                 if (written < 0 || written >= sizeof(buffer) - pos)
@@ -208,7 +210,8 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
         }
     }
 
-    Meteo_api->result = strdup(buffer);
+    Meteo_api->result = strdup(json_dumps(response, JSON_INDENT(4) | JSON_PRESERVE_ORDER));
+    json_decref(response);
     json_decref(json);
     json_decref(Meteo_data);
     return 0;

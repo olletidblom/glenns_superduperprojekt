@@ -4,7 +4,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 
-// Now we can use the full type
+
 typedef char* (*RouteFunction)(void* _Context);
 
 typedef struct {
@@ -21,4 +21,4 @@ RouteFunction RouteHandler_FindRoute(const char *end_point);
 
 void RouteHandler_Dispose();
 
-#endif // __HANDLER_H__
+#endif 

@@ -9,10 +9,11 @@
 typedef struct
 {
     char *city_name;
-    char *result;
+    char *parsed_response;
     char* url;
     char* file_path;
-    CurlResponse* response;
+    char* response_data;
+    CurlResponse* curl_response;
     HTTPClient_s http_client;
 } GEO_API;
 
