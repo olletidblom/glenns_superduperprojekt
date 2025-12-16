@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "../../glenns_metro/libs/utils/md5.h"
 #include "../../glenns_metro/libs/utils/utils.h"
+#include "../utils.h"
 
 #include <sys/stat.h>
 
@@ -54,6 +55,10 @@ int GEO_BuildRequestURL(GEO_API *geo_api)
 
 int GEO_CheckCache(GEO_API *geo_api)
 {
+    if (strchr(geo_api->city_name, '%')) {
+        url_decode_inplace(geo_api->city_name);
+    }
+
     const char *hash_name = MD5_HashToString(geo_api->city_name, strlen(geo_api->city_name));
     printf("url: %s\nmd5: %s\n", geo_api->city_name, hash_name);
 
