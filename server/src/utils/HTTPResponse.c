@@ -14,8 +14,6 @@
                         "\r\n"                                           \
                         "%s"
 
-
-
 int HTTPResponse_Initialize(HTTPResponse *http_response)
 {
     if (http_response == NULL)
@@ -47,6 +45,9 @@ int HTTPResponse_Format(HTTPResponse *http_response)
     case 404:
         status_text = "Not Found";
         break;
+    case 408:
+        status_text = "Connection Timeout";
+        break;
     case 500:
         status_text = "Internal Server Error";
         break;
@@ -58,9 +59,9 @@ int HTTPResponse_Format(HTTPResponse *http_response)
     char response[2048];
     http_response->response_length = snprintf(response, sizeof(response), RESPONSE_HEADER,
                                               http_response->status_code, status_text, strlen(http_response->response), http_response->response);
-                                    
+
     http_response->response_formatted = strdup(response);
-    
+
     if (http_response->response_formatted == NULL)
         return -1;
 
@@ -68,7 +69,7 @@ int HTTPResponse_Format(HTTPResponse *http_response)
     return 0;
 }
 
-int HTTPResponse_Send(int socket, HTTPResponse* http_response)
+int HTTPResponse_Send(int socket, HTTPResponse *http_response)
 {
     int bytesWritten = HTTPConnection_Write(socket, http_response->response_ptr, http_response->response_length);
 
@@ -92,17 +93,16 @@ int HTTPResponse_Send(int socket, HTTPResponse* http_response)
 
 void HTTPResponse_Dispose(HTTPResponse *http_response)
 {
-    if(http_response == NULL)
-    return;
+    if (http_response == NULL)
+        return;
 
-    if(http_response->response != NULL)
+    if (http_response->response != NULL)
     {
         free(http_response->response);
         http_response->response = NULL;
     }
 
-    
-    if(http_response->response_formatted != NULL)
+    if (http_response->response_formatted != NULL)
     {
         free(http_response->response_formatted);
         http_response->response_formatted = NULL;

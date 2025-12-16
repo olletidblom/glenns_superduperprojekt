@@ -34,6 +34,8 @@ int HTTPServerConnection_Initialize(HTTPServerConnection **connection, int socke
     _Connection->is_active = is_active;
 
     _Connection->http_response.status_code = 200;
+    _Connection->timeout = 0;
+    _Connection->bytesReadOut = 0;
 
     _Connection->state = HTTPServerConnection_State_Read;
     _Connection->task = smw_create_task(_Connection, HTTPServerConnection_work);
@@ -58,23 +60,43 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     if (connection == NULL)
         return;
 
+
     switch (connection->state)
     {
     case HTTPServerConnection_State_Read:
     {
 
-        int result = HTTPRequest_ReadHeaders(connection->socket, &connection->http_request);
+        int result = HTTPRequest_ReadHeaders(connection->socket, &connection->http_request, &connection->bytesReadOut);
 
-        if (result == 0)
+        if (connection->timeout > 0)
+        {
+            if (monTime >= connection->timeout)
+            {
+                connection->state = HTTPServerConnection_State_Timeout;
+            }
+        }
+        else
+        {
+            // Set timeout to 30 seconds from now
+            connection->timeout = monTime + 3000;
+        }
+
+        if (connection->bytesReadOut > 0)
+        {
+            // Reset timeout on successful read
+            connection->timeout = 0;
+        }
+
+        if (result == HTTPServerConnection_ReadResult_Success)
         {
             connection->state = HTTPServerConnection_State_Parse;
             break;
         }
-        else if (result > 0)
+        else if (result == HTTPServerConnection_ReadResult_Pending)
         {
             break;
         }
-        else
+        else if (result == HTTPServerConnection_ReadResult_Error)
         {
             connection->state = HTTPServerConnection_State_Cleanup;
             break;
@@ -133,7 +155,7 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
     case HTTPServerConnection_State_FormatResponse:
     {
         int result = HTTPResponse_Format(&connection->http_response);
-        if(result != 0)
+        if (result != 0)
         {
             connection->state = HTTPServerConnection_State_Cleanup;
         }
@@ -153,6 +175,14 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         {
             break;
         }
+    }
+    break;
+
+    case HTTPServerConnection_State_Timeout:
+    {
+        printf("Connection timed out!\n");
+        connection->http_response.status_code = 408; // Request Timeout
+        connection->state = HTTPServerConnection_State_Cleanup;
     }
     break;
     case HTTPServerConnection_State_Cleanup:
@@ -185,7 +215,7 @@ void HTTPServerConnection_Dispose(HTTPServerConnection **connection)
     HTTPResponse_Dispose(&_server->http_response);
 
     URLHandler_Dispose(&_server->url_handler);
-    
+
     *(_server->is_active) = 1;
     free(_server);
     _server = NULL;

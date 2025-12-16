@@ -1,3 +1,4 @@
+#include "../HTTPServerConnection.h"
 #include "HTTPRequest.h"
 #include "Wrapper.h"
 #include <stdint.h>
@@ -23,36 +24,32 @@ int HTTPRequest_Initialize(HTTPRequest* http_request)
 
 
 
-int HTTPRequest_ReadHeaders(int socket, HTTPRequest *http_request)
+int HTTPRequest_ReadHeaders(int socket, HTTPRequest *http_request, int* bytesReadOut)
 {
     int bytesRead = HTTPConnection_Read(socket, (uint8_t*)(http_request->recv_buffer + http_request->recv_buffer_length),
                                         sizeof(http_request->recv_buffer) - http_request->recv_buffer_length - 1);
-
+    
     if (bytesRead < 0)
     {
         if (errno == EWOULDBLOCK || errno == EAGAIN)
         {
-            return 1;
+            return HTTPServerConnection_ReadResult_Pending;
         }
 
-        return -1;
+        return HTTPServerConnection_ReadResult_Error;
     }
 
-    if (bytesRead == 0)
-    {
-        // http_request->state = HTTPServerConnection_State_Cleanup;
-        return 0;
-    }
+    *bytesReadOut = bytesRead;
 
     http_request->recv_buffer_length += bytesRead;
     http_request->recv_buffer[http_request->recv_buffer_length] = '\0';
 
     if (strstr(http_request->recv_buffer, "\r\n\r\n") != NULL)
     {
-        return 0;
+        return HTTPServerConnection_ReadResult_Success;
     }
 
-    return 1;
+    return HTTPServerConnection_ReadResult_Pending;
 }
 
 

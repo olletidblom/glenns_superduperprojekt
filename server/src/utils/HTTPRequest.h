@@ -20,7 +20,7 @@ typedef struct
 
 int HTTPRequest_Initialize(HTTPRequest* http_request);
 
-int HTTPRequest_ReadHeaders(int socket, HTTPRequest *http_request);
+int HTTPRequest_ReadHeaders(int socket, HTTPRequest *http_request, int* bytesReadOut);
 
 int HTTPRequest_ParseHeader(HTTPRequest* http_request);
 

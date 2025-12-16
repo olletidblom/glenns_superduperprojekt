@@ -25,9 +25,16 @@ typedef enum
   HTTPServerConnection_State_Handlers, //Calls function pointer returned by FindRoute
   HTTPServerConnection_State_FormatResponse, //Formats response
   HTTPServerConnection_State_SendResponse, //Sends respose to client
+  HTTPServerConnection_State_Timeout,
   HTTPServerConnection_State_Cleanup, //Disposes the connection, frees memory
 } HTTPServerConnection_State;
 
+typedef enum{
+  HTTPServerConnection_ReadResult_Success,
+  HTTPServerConnection_ReadResult_Pending,
+  HTTPServerConnection_ReadResult_Error,
+
+}HTTPServerConnection_ReadResult;
 
 typedef struct
 {
@@ -45,6 +52,9 @@ typedef struct
   HTTPRequest http_request; 
   HTTPResponse http_response;
 
+  uint64_t timeout;
+
+  int bytesReadOut;
   int *is_active;
   Callback connection_callback;
   RouteFunction handler; 

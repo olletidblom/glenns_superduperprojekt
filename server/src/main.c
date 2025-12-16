@@ -1,6 +1,5 @@
 #include "../../libs/utils.h"
 #include "HTTPServer.h"
-#include "Handlers/WeatherHandler.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
