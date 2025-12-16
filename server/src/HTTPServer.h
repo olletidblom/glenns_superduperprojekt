@@ -40,16 +40,8 @@ typedef struct {
   HTTP_Status status;
   HTTP_Method method;
   TCPServer *tcp_server;
-  Cities* cities;
-   HTTPServerConnection* connection;
+  HTTPServerConnection* connection;
 
-  void* context;
-  int response_code;
-
-  char* method_url;
-	char* host;
-	char* url_path;
-	char* url;
 
 } HTTPServer;
 

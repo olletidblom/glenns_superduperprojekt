@@ -60,12 +60,14 @@ int Meteo_BuildRequestURL(Meteo_API *Meteo_api)
 }
 
 int Meteo_CheckCache(Meteo_API *Meteo_api, URLHandler *handler)
-{
-    const char *hash_name = MD5_HashToString(Meteo_api->latitude, strlen(Meteo_api->latitude));
-    printf("url: %s\nmd5: %s\n", Meteo_api->latitude, hash_name);
+{   
+    char lat_lon[256];
+    snprintf(lat_lon, sizeof(lat_lon), "%s_%s", Meteo_api->latitude, Meteo_api->longitude);
+
+    const char *hash_lat = MD5_HashToString(lat_lon, strlen(lat_lon));
 
     char cache_filepath[256];
-    snprintf(cache_filepath, sizeof(cache_filepath), "cache/%s_Meteo.json", hash_name);
+    snprintf(cache_filepath, sizeof(cache_filepath), "cache/%s_Meteo.json", hash_lat);
 
     Meteo_api->file_path = strdup(cache_filepath);
 
