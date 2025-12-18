@@ -149,7 +149,7 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
     // If no specifed parameters, return all data
     json_object_foreach(Meteo_data, key, value)
     {
-        if (handler->parameters->pairsLength == 2)
+        if (handler->pairsLength == 2)
         {
 
             if (json_is_integer(value))
@@ -172,7 +172,7 @@ int Meteo_ParseResponse(Meteo_API *Meteo_api, URLHandler *handler)
     }
 
     // Compare requested parameters with available data
-    for (int i = 0; i < handler->parameters->pairsLength; i++)
+    for (int i = 0; i < handler->pairsLength; i++)
     {
         json_object_foreach(Meteo_data, key, value)
         {

@@ -16,9 +16,9 @@ Cache(const std::string& path) : dir_path(path)
     dir_created = std::filesystem::create_directory(dir_path);
 }
 
-int cache_save(std::string& data);
+int cache_save(std::string& data, std::string name);
 
-int cache_load();
+std::string cache_load(std::string name, bool check_age);
 
 
 

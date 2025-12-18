@@ -24,8 +24,8 @@ int URLHandler_Initialize(URLHandler **_URLHandler)
     if (handler->parameters == NULL)
         return -2;
 
-    handler->parameters->pairsLength = 0;
-    handler->parameters->maxPairs = 2;
+    handler->pairsLength = 0;
+    handler->maxPairs = 2;
     handler->end_point = NULL;
 
     *_URLHandler = handler;
@@ -57,7 +57,6 @@ int URLHandler_ParseEndPoint(URLHandler *_URLHandler, char *url)
 
     return 0;
 }
-
 int URLHandler_ParseInputParameters(URLHandler *_URLHandler, char *url)
 {
     int pairsLength = 0;
@@ -78,8 +77,7 @@ int URLHandler_ParseInputParameters(URLHandler *_URLHandler, char *url)
     param_start++;
 
     char *first_param = strtok(param_start, "&");
-    int i;
-    for (i = 0; first_param != NULL; i++)
+    while (first_param != NULL)
     {
         char *split = strchr(first_param, '=');
         if (split)
@@ -89,14 +87,18 @@ int URLHandler_ParseInputParameters(URLHandler *_URLHandler, char *url)
                 maxPairs *= 2;
                 InputParameters *temp = (InputParameters *)realloc(_URLHandler->parameters, maxPairs * sizeof(InputParameters));
                 if (temp == NULL)
+                {
+                    free(url_cpy);
                     return -3;
+                }
 
                 _URLHandler->parameters = temp;
             }
-            _URLHandler->parameters[i].key = strndup(first_param, split - first_param);
-            _URLHandler->parameters[i].value = strndup(split + sizeof(char), strlen(split + sizeof(char)));
+
+            _URLHandler->parameters[pairsLength].key = strndup(first_param, split - first_param);
+            _URLHandler->parameters[pairsLength].value = strdup(split + 1);
             pairsLength++;
-            _URLHandler->parameters->pairsLength = pairsLength;
+            _URLHandler->pairsLength = pairsLength;
         }
         first_param = strtok(NULL, "&");
     }
@@ -111,7 +113,7 @@ char *URLHandler_GetParameterValue(URLHandler *_URLHandler, const char *key)
     if (_URLHandler == NULL || key == NULL)
         return NULL;
 
-    for (int i = 0; i < _URLHandler->parameters->pairsLength; i++)
+    for (int i = 0; i < _URLHandler->pairsLength; i++)
     {
         if (strcmp(_URLHandler->parameters[i].key, key) == 0)
         {
@@ -127,8 +129,7 @@ int URLHandler_Parse(URLHandler *_URLHandler, char *url)
 
     int result = URLHandler_ParseEndPoint(_URLHandler, url);
 
-    
-    if (result != 0)
+        if (result != 0)
     {
         return -1;
     }
@@ -155,7 +156,7 @@ void URLHandler_Dispose(URLHandler **_URLHandler)
     if (handler->end_point != NULL)
         free(handler->end_point);
 
-    for (int i = 0; i < handler->parameters->pairsLength; i++)
+    for (int i = 0; i < handler->pairsLength; i++)
     {
         if (handler->parameters[i].key != NULL)
             free(handler->parameters[i].key);

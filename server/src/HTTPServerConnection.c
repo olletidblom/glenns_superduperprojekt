@@ -77,13 +77,11 @@ void HTTPServerConnection_work(void *_Context, uint64_t monTime)
         }
         else
         {
-            // Set timeout to 30 seconds from now
             connection->timeout = monTime + 3000;
         }
 
         if (connection->bytesReadOut > 0)
         {
-            // Reset timeout on successful read
             connection->timeout = 0;
         }
 

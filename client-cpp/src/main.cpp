@@ -26,9 +26,13 @@ int main()
             std::pair<std::string, std::string> cords = input.get_input_coords();
             response = client.get_weather(cords);
         }
+        else if(option == 3)
+        {
+            std::cout << "Exiting" << std::endl;
+        }
         else
         {
-            std::cout << "Invalid option" << std::endl;
+            std::cout << "Invalid option!" << std::endl;
         }
 
         std::cout << response << std::endl;

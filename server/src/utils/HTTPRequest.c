@@ -111,6 +111,8 @@ int HTTPRequest_ParseHeader(HTTPRequest* http_request)
         printf("HTTPServerConnection_ParseHeader: Failed to copy url\n");
         return -1;
     }
+    size_t url_length = (size_t)(path_end - path_start);
+    http_request->url[url_length] = '\0';
 
     return 0;
 }

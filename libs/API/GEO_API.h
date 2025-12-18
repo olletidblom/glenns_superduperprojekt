@@ -6,6 +6,7 @@
 #include "../HTTP/HTTPClient.h"
 #include "../curl.h"
 
+
 typedef struct
 {
     char *city_name;

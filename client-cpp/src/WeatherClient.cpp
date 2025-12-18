@@ -3,6 +3,7 @@
 #include "GEO.hpp"
 #include "Meteo.hpp"
 #include "Input.hpp"
+#include "Cache.hpp"
 
 std::string WeatherClient::get_cords(const std::string &city_name)
 {
@@ -14,12 +15,25 @@ std::string WeatherClient::get_cords(const std::string &city_name)
         return "Failed to build request\n";
     }
 
+    Cache cache("cache");
+
+    std::string cache_name = city_name;
+
+    std::string loaded_cache = cache.cache_load(city_name, 0);
+
+    if (!loaded_cache.empty())
+    {
+        return loaded_cache;
+    }
+
     std::string response = client.HTTPClient_GET(formatted_request);
 
     if (response.empty())
     {
         return "Failed to get data\n";
     }
+
+    cache.cache_save(response, cache_name);
 
     return response;
 }
@@ -34,12 +48,25 @@ std::string WeatherClient::get_weather(const std::pair<std::string, std::string>
         return "Failed to build request\n";
     }
 
+    Cache cache("cache");
+
+    std::string cache_name = cords.first + cords.second;
+
+    std::string loaded_cache = cache.cache_load(cache_name, 1);
+
+    if (!loaded_cache.empty())
+    {
+        return loaded_cache;
+    }
+
     std::string response = client.HTTPClient_GET(formatted_request);
 
     if (response.empty())
     {
         return "Failed to get data\n";
     }
-    
+
+    cache.cache_save(response, cache_name);
+
     return response;
 }

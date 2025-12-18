@@ -6,6 +6,7 @@ int Input::get_input_option()
     printf("Select an option\n");
     printf("Get Co-ordinates [1]\n");
     printf("Get Weather [2]\n");
+    printf("Exit [3]\n");
     std::string selected;
     std::getline(std::cin, selected);
     
@@ -13,6 +14,8 @@ int Input::get_input_option()
     selected_option = 1;
     else if(selected == "2")
     selected_option = 2;
+    else if(selected == "3")
+    selected_option = 3;
     else
     selected_option = -1;
 

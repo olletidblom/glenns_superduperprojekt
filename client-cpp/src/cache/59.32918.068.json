@@ -1,0 +1,19 @@
+{
+    "time": "2025-12-17T13:45",
+    "interval": 900,
+    "temperature_2m": 7.5999999999999996,
+    "relative_humidity_2m": 81,
+    "apparent_temperature": 3.2000000000000002,
+    "is_day": 1,
+    "precipitation": 0.0,
+    "rain": 0.0,
+    "showers": 0.0,
+    "snowfall": 0.0,
+    "weather_code": 3,
+    "cloud_cover": 98,
+    "pressure_msl": 1009.2,
+    "surface_pressure": 1007.0,
+    "wind_speed_10m": 20.899999999999999,
+    "wind_direction_10m": 242,
+    "wind_gusts_10m": 37.799999999999997
+}
