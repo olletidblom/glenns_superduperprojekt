@@ -1,6 +1,6 @@
 #include "WeatherServer.h"
-#include "handlers/WeatherHandler.h"
-#include "handlers/RouteHandler.h"
+#include "Handlers/WeatherHandler.h"
+#include "Handlers/RouteHandler.h"
 #include <stdlib.h>
 
 int WeatherServer_Initialize(WeatherServer **server)
