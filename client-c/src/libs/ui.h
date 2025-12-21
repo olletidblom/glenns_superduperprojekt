@@ -28,7 +28,7 @@
   tb_set_cell(offset_x + length, y, corner_right, TB_WHITE, TB_DEFAULT);
 #include "utils/LinkedList.h"
 
-typedef void (*ui_city_selection_update)(double latitude, double longitude);
+typedef void (*ui_city_selection_update)(const char *city_name);
 typedef void (*ui_search_city_update)(const char *input);
 
 typedef struct {

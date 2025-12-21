@@ -7,8 +7,13 @@
 #include "jansson/jansson_private.h"
 #include "utils/HTTPClient.h"
 
+#define GWDURL "http://kontoret.onvo.se:10180/api/v1/gwd?city=G%C3%B6teborg&CountryCode=SE"
+
 json_t *ui_fetch_data(const char* url) {
     int result = 0;
+    double latitude = 0;
+    double longitude = 0;
+    char *name = "Göteborg";
     HTTPClient *client = NULL;
 
     result = HTTPClient_Init(&client);
@@ -17,6 +22,10 @@ json_t *ui_fetch_data(const char* url) {
         return NULL;
     }
 
+    // char url[512];
+    // snprintf(url, sizeof(url), CITY_WEATHER_API_URL, latitude,
+    //          longitude);
+
     json_t *json = HTTPClient_GET(client, url);
     if (json == NULL) {
         printf("HTTP GET request failed! Errorcode: %i\n", errno);
@@ -24,7 +33,14 @@ json_t *ui_fetch_data(const char* url) {
         return NULL;
     }
 
-    json_t *ret = json_incref(json);
+    json_t *ret = json_incref(
+        json); // This means that the caller is responsible for disposing the json
+    // object. It will not be disposed when the HTTPClient is disposed.
+
+    // Lägg till de tre attributen vi snackade om
+    json_object_set_new(ret, "name", json_string(name));
+    json_object_set_new(ret, "latitude", json_real((double) latitude));
+    json_object_set_new(ret, "longitude", json_real((double) longitude));
 
     HTTPClient_Dispose(&client);
 
@@ -142,59 +158,41 @@ LinkedList *GetWeatherData(json_t *json) {
     return list;
 }
 
-void ui_get_city_data(double latitude, double longitude) {
-    //https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current=temperature_2m
-    char url[200];
-    snprintf(url, 199, "http://goteborg.onvo.se/api/v1/gwd?lat=%f&lon=%f", latitude, longitude);
+void ui_get_city_data(const char *input) {
+    json_t *json = ui_fetch_data(GWDURL);
+    LinkedList *city_data = GetWeatherData(json);
+    ui_add_city_data(city_data);
+}
+
+void ui_get_city_data_new(double latitude, double longitude) {
+    char url[150];
+    snprintf(url, 149, "http://kontoret.onvo.se:10180/api/v1/gwd?lat=%f&lon=%f", latitude, longitude);
     json_t *json = ui_fetch_data(url);
     LinkedList *city_data = GetWeatherData(json);
     ui_add_city_data(city_data);
 }
 
 void ui_get_search_city(const char *input) {
-    const int MAX_CITIES = 10;
-    char url[200];
-    snprintf(url, 199, "http://goteborg.onvo.se/api/v1/geo?city=%s", input);
+    char url[150];
+    snprintf(url, 149, "http://kontoret.onvo.se:10180/api/v1/geo?city=\"input\"", input);
+    City *cities = malloc(3 * sizeof(City));
 
-    City *cities = malloc(MAX_CITIES * sizeof(City));
+    cities[0] = (City){ "Stockholm", 1.2, 3.4 };
+    cities[1] = (City){ "Kiruna", 5.6, 7.8 };
+    cities[2] = (City){ "Lysekil", 9.0, 1.2 };
 
-    json_t *root = ui_fetch_data(url);
+    int number_of_cities = sizeof(cities) / sizeof(City);
 
-    json_t *results = json_object_get(root, "results");
-    size_t i;
-    json_t *item;
-
-    if (!json_is_array(results))
-        return;
-
-    int counter = 0;
-
-    json_array_foreach(results, i, item) {
-        if (i >= MAX_CITIES || !json_is_object(item))
-            break;
-
-        json_t *jname = json_object_get(item, "name");
-        json_t *jlat  = json_object_get(item, "latitude");
-        json_t *jlon  = json_object_get(item, "longitude");
-
-        if (!json_is_string(jname) ||
-            !json_is_number(jlat)  ||
-            !json_is_number(jlon))
-            continue;
-
-        cities[i].name = strdup(json_string_value(jname));
-        if (!cities[i].name)
-            return;
-
-        cities[i].latitude  = json_number_value(jlat);
-        cities[i].longitude = json_number_value(jlon);
-        counter++;
-    }
-
-    ui_add_search_city_data(cities, counter);
+    ui_add_search_city_data(cities, number_of_cities);
 }
 
 int main() {
+    //json_t* json = ui_fetch_data();
+    //LinkedList *list = Cities_GetCityValues(json);
+    //KeyValuePair *kvp = NULL;
+    //LinkedList_ForEach(list, &kvp) {
+    //  printf("%s : %s\n\n", kvp->key, kvp->value);
+    //}
     start_ui(ui_get_city_data, ui_get_search_city);
 
     return 0;
