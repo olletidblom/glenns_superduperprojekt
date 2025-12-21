@@ -1,62 +1,38 @@
-# C++-client/Makefile
-# TODO: Make adjustmenets similar to makefiles in server/src and client-c/src
 CXX := g++
-CXXFLAGS := -std=c++11 -Wall -Wextra -MMD -MP -g
-INCLUDES := -I../libs
+CXXFLAGS := -Wall -Wextra -std=c++17 
 LDFLAGS := -lcurl
-SRC_DIR := src
-LIBS_DIR := ../libs
-BUILD_DIR := build
-TARGET := c++-client
 
-# Source files (now under src/)
-SRC := $(wildcard $(SRC_DIR)/*.cpp) $(wildcard $(LIBS_DIR)/*.c)
-OBJ := $(SRC:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
+BUILD := build
+DEBUG_BUILD := build_debug
 
-# Dependencies
-DEPS := $(OBJ:.o=.d)
+TARGET := client_cpp
+DEBUG_TARGET := client_cpp_debug
 
-# Default target
+SRC := $(shell find . -name "*.cpp")
+
+OBJ := $(patsubst %.cpp, $(BUILD)/%.o, $(SRC))
+DEBUG_OBJ := $(patsubst %.cpp, $(DEBUG_BUILD)/%.o, $(SRC))
+
 all: $(TARGET)
 
-# Build target
 $(TARGET): $(OBJ)
-	@echo "Linking $(TARGET)..."
-	$(CXX) $(OBJ) -o $@ $(LDFLAGS)
-	@echo "Build complete!"
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Compile object files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+$(BUILD)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	@echo "Compiling $<..."
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-	
-$(BUILD_DIR)/%.o: $(LIBS_DIR)/%.cpp  # Compile utility files
-	@mkdir -p $(BUILD_DIR)
-	@echo "Compiling utility $<..."
-	$(CC) $(CFLAGS) -c $< -o $@
+debug: CXXFLAGS += -g -O0 -DDEBUG
+debug: $(DEBUG_TARGET)
 
-# Run the application
-run: $(TARGET)
-	@echo "Running the C++ client..."
-	./$(TARGET)
+$(DEBUG_TARGET): $(DEBUG_OBJ)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Clean build files
+$(DEBUG_BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 clean:
-	@echo "Cleaning build files..."
-	rm -rf $(BUILD_DIR) $(TARGET)
-	@echo "Clean complete!"
+	rm -rf $(BUILD) $(DEBUG_BUILD) $(TARGET) $(DEBUG_TARGET)
 
-# Debug build with extra debugging symbols
-debug: CXXFLAGS += -DDEBUG -O0 -ggdb3
-debug: $(TARGET)
-
-# Release build with optimization
-release: CXXFLAGS += -O2 -DNDEBUG
-release: $(TARGET)
-
-# Include dependency files
--include $(DEPS)
-
-.PHONY: all clean run debug release
+.PHONY: all debug clean
