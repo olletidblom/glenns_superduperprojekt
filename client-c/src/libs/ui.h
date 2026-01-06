@@ -28,19 +28,21 @@
   tb_set_cell(offset_x + length, y, corner_right, TB_WHITE, TB_DEFAULT);
 #include "utils/LinkedList.h"
 
-typedef void (*ui_city_selection_update)(const char *city_name);
+typedef void (*ui_city_selection_update)(double latitude, double longitude);
 typedef void (*ui_search_city_update)(const char *input);
 
 typedef struct {
-  char* name;
+  char *name;
   double latitude;
   double longitude;
 } City;
 
 int add_city(const char *name);
-void start_ui(ui_city_selection_update get_city_data, ui_search_city_update search_city);
+void start_ui(ui_city_selection_update get_city_data,
+              ui_search_city_update search_city, City *initial_cities,
+              int initial_count);
 void free_cities();
-void ui_add_city_data(LinkedList* city_data);
-void ui_add_search_city_data(City* cities, int number_of_cities);
+void ui_add_city_data(LinkedList *city_data);
+void ui_add_search_city_data(City *cities, int number_of_cities);
 
-#endif // GLENNS_METRO_UI_H
+#endif
