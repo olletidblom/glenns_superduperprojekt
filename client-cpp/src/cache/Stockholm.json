@@ -1,0 +1,62 @@
+[
+    {
+        "name": "Stockholm",
+        "latitude": 59.32938,
+        "longitude": 18.068709999999999,
+        "country_code": "SE"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 47.042259999999999,
+        "longitude": -68.139480000000006,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 45.099690000000002,
+        "longitude": -96.802009999999996,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 44.4833,
+        "longitude": -92.262119999999996,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 41.08954,
+        "longitude": -74.517099999999999,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 37.248100000000001,
+        "longitude": -86.130809999999997,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 26.38674,
+        "longitude": -97.879170000000002,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 45.036349999999999,
+        "longitude": -94.221090000000004,
+        "country_code": "US"
+    },
+    {
+        "name": "Glendale",
+        "latitude": 40.899850000000001,
+        "longitude": -124.01701,
+        "country_code": "US"
+    },
+    {
+        "name": "Stockholm",
+        "latitude": 50.650010000000002,
+        "longitude": -102.30097000000001,
+        "country_code": "CA"
+    }
+]

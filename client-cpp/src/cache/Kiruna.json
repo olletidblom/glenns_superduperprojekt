@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Kiruna",
+        "latitude": 67.855720000000005,
+        "longitude": 20.22513,
+        "country_code": "SE"
+    },
+    {
+        "name": "Kiruna",
+        "latitude": 0.34999999999999998,
+        "longitude": 33.733330000000002,
+        "country_code": "UG"
+    },
+    {
+        "name": "Kirunavaara",
+        "latitude": 67.816670000000002,
+        "longitude": 20.199999999999999,
+        "country_code": "SE"
+    },
+    {
+        "name": "Kirunavaara",
+        "latitude": 67.833330000000004,
+        "longitude": 20.199999999999999,
+        "country_code": "SE"
+    },
+    {
+        "name": "Kiruna Airport",
+        "latitude": 67.816670000000002,
+        "longitude": 20.33333,
+        "country_code": "SE"
+    }
+]
