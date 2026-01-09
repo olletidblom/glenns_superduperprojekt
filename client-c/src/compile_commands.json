@@ -1,0 +1,90 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-g",
+      "-O0",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wfatal-errors",
+      "-Wno-format-truncation",
+      "-Iincludes",
+      "-Ilibs",
+      "-D_GNU_SOURCE",
+      "-c",
+      "-o",
+      "build/src/Weather.o",
+      "src/Weather.c"
+    ],
+    "directory": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui",
+    "file": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/src/Weather.c",
+    "output": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/build/src/Weather.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-g",
+      "-O0",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wfatal-errors",
+      "-Wno-format-truncation",
+      "-Iincludes",
+      "-Ilibs",
+      "-D_GNU_SOURCE",
+      "-c",
+      "-o",
+      "build/src/Cities.o",
+      "src/Cities.c"
+    ],
+    "directory": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui",
+    "file": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/src/Cities.c",
+    "output": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/build/src/Cities.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-g",
+      "-O0",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wfatal-errors",
+      "-Wno-format-truncation",
+      "-Iincludes",
+      "-Ilibs",
+      "-D_GNU_SOURCE",
+      "-c",
+      "-o",
+      "build/src/City.o",
+      "src/City.c"
+    ],
+    "directory": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui",
+    "file": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/src/City.c",
+    "output": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/build/src/City.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-g",
+      "-O0",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-Wfatal-errors",
+      "-Wno-format-truncation",
+      "-Iincludes",
+      "-Ilibs",
+      "-D_GNU_SOURCE",
+      "-c",
+      "-o",
+      "build/main.o",
+      "main.c"
+    ],
+    "directory": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui",
+    "file": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/main.c",
+    "output": "/home/tibalomium/Documents/yh/glenns_superduperprojekt_ui/build/main.o"
+  }
+]
