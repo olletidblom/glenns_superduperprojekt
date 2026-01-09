@@ -4,7 +4,6 @@
 #include "termbox2.h"
 #include "utils/utils.h"
 #include <bits/time.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,26 +33,6 @@ City **filtered_cities = NULL;
 int filtered_count = 0;
 int filtered_capacity = 0;
 
-static int utf8_strcasestr(const char *haystack, const char *needle) {
-  if (!needle || !*needle)
-    return 1;
-  if (!haystack)
-    return 0;
-
-  char h_lower[512], n_lower[256];
-  size_t i;
-
-  for (i = 0; i < sizeof(h_lower) - 1 && haystack[i]; i++)
-    h_lower[i] = tolower((unsigned char)haystack[i]);
-  h_lower[i] = '\0';
-
-  for (i = 0; i < sizeof(n_lower) - 1 && needle[i]; i++)
-    n_lower[i] = tolower((unsigned char)needle[i]);
-  n_lower[i] = '\0';
-
-  return strstr(h_lower, n_lower) != NULL;
-}
-
 void filter_cities(void) {
   if (!search_data || search_number == 0) {
     filtered_count = 0;
@@ -69,7 +48,7 @@ void filter_cities(void) {
   filtered_count = 0;
 
   for (int i = 0; i < search_number; i++) {
-    if (utf8_strcasestr(search_data[i].name, search_text)) {
+    if (strcasestr(search_data[i].name, search_text)) {
       filtered_cities[filtered_count++] = &search_data[i];
     }
   }
