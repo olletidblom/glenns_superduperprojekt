@@ -1,0 +1,26 @@
+[
+  {
+    "file": "main.c",
+    "arguments": [
+      "gcc",
+      "-g",
+      "-O0",
+      "-std=c99",
+      "-Wall",
+      "-Wextra",
+      "-MMD",
+      "-MP",
+      "-Wfatal-errors",
+      "-Wno-format-truncation",
+      "-Iincludes",
+      "-Ilibs",
+      "-D_GNU_SOURCE",
+      "-c",
+      "main.c",
+      "-o",
+      "build/main.o"
+    ],
+    "directory": "/mnt/c/Users/tibal/Documents/GitHub/glenns_superduperprojekt/client-c/src",
+    "output": "build/main.o"
+  }
+]

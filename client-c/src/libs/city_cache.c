@@ -71,6 +71,7 @@ int cache_init(void) {
     if (cache_count >= cache_capacity) {
       if (expand_cache() != 0) {
         fclose(file);
+        cache_dispose();
         return -1;
       }
     }
@@ -82,6 +83,7 @@ int cache_init(void) {
 
     if (cache_cities[cache_count].name == NULL) {
       fclose(file);
+      cache_dispose();
       return -1;
     }
 
